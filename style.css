@@ -1,0 +1,438 @@
+:root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --background: #F3F4F6;
+    --surface: #FFFFFF;
+    --text-main: #1F2937;
+    --text-muted: #4B5563;
+    --border: #D1D5DB;
+    --success: #10B981;
+    --error: #EF4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 900px;
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+}
+
+/* Sidebar info do evento */
+.event-sidebar {
+    flex: 1.2;
+    background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);
+    color: #FFFFFF;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.event-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    font-weight: 800;
+    background: linear-gradient(to right, #A5B4FC, #E0E7FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.event-details {
+    margin-top: 30px;
+}
+
+.event-detail-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+.event-detail-item svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    color: #A5B4FC;
+    flex-shrink: 0;
+}
+
+.ticket-summary {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 40px;
+}
+
+.ticket-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.ticket-price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #A5B4FC;
+}
+
+/* Área do Formulário */
+.form-section {
+    flex: 1.8;
+    padding: 40px;
+    background: var(--surface);
+}
+
+@media (max-width: 480px) {
+    .form-section,
+    .event-sidebar {
+        padding: 25px;
+    }
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #E5E7EB;
+    z-index: 1;
+    transform: translateY(-50%);
+}
+
+.step {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.step.active {
+    color: var(--primary);
+}
+
+.step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #E5E7EB;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.step.active .step-num {
+    background: var(--primary);
+    color: #FFFFFF;
+}
+
+.step.completed .step-num {
+    background: var(--success);
+    color: #FFFFFF;
+}
+
+/* Form Steps */
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-title {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 580px) {
+    .form-group-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Opções de Pagamento */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.payment-opt {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.payment-opt.selected {
+    border-color: var(--primary);
+    background-color: rgba(79, 70, 229, 0.05);
+    color: var(--primary);
+}
+
+.payment-details-box {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+/* Pix layout */
+.pix-container {
+    text-align: center;
+    display: none;
+}
+
+.pix-qr {
+    width: 180px;
+    height: 180px;
+    margin: 15px auto;
+    background: #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #D1D5DB;
+}
+
+.pix-code {
+    font-size: 0.8rem;
+    background: #F3F4F6;
+    padding: 10px;
+    border-radius: 6px;
+    word-break: break-all;
+    margin-bottom: 15px;
+    border: 1px dashed var(--border);
+    font-family: monospace;
+}
+
+.btn-copy {
+    background: #E0E7FF;
+    color: var(--primary);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.btn-copy:hover {
+    background: #C7D2FE;
+}
+
+/* Botões */
+.btn-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+.btn {
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #FFFFFF;
+    flex: 1;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    background: #E5E7EB;
+    color: var(--text-muted);
+}
+
+.btn-secondary:hover {
+    background: #D1D5DB;
+}
+
+/* Status de Sucesso */
+.success-screen {
+    text-align: center;
+    padding: 40px 10px;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    background: #DEF7EC;
+    color: var(--success);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 20px;
+}
+
+.success-icon svg {
+    width: 32px;
+    height: 32px;
+}
+.sidebar-custom-bg {
+    width: 376px;
+    min-height: 926.23px;
+    /* Para adicionar sua imagem futuramente, basta descomentar a linha abaixo e alterar o caminho: */
+    /* background-image: url('caminho-da-sua-imagem.jpg'); */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Caixa estilizada do regulamento */
+.regulation-box {
+    background-color: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+
+.regulation-download {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.link-download {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-block;
+    transition: color 0.2s;
+}
+
+.link-download:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* Estilização básica para o input de arquivo */
+input[type="file"] {
+    padding: 8px 12px;
+    background-color: #FFFFFF;
+    cursor: pointer;
+}

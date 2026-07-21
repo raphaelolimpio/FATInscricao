@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "fatinscricoes",
+  "private_key_id": "7078bbba21a9e147dfa1d2e948f2b0d461464679",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDTMKLe3a1Tnsh4\nWH+thGQ9CA0l6N07QbIxjOSkGxVPL5CvVrJI6A3sOh3SSLpLBt1xCknpcIejJARn\niR1Bwjk5iMf8O+TsMtBvJJDl0JfV9uYRWA+gG8HIBn6Iotccj5lWZWGJNYv5+75Y\nP9+juEcR5DcLbAisruFii+r9+VIUz22U8Ta88J3Bn4Lhpa4AG1fbCv0sTUMoj0cY\nJxM8pZvFQpsVs6Ci1OlZG4UcoRtYsrViuoCqOUGrinr+gpThDWGfEEovbcKwPvU4\nRkTNZsdgwUX6ap58l3cfvehFVK9qJJCNSOgjFuqauc3LDcLF4LSqm7SnF+rf2NV2\nDVanhrdFAgMBAAECggEAGFJMF4WJDg3FwZJTleyezKaOORTx0X614l37AOk7kYSF\nUaQW4S2UWOWyhIKqrbRLMVcBfxheDow506CnVWjkRTt66JIPQaJyfbJE26qjqdkG\n0u2E0ygPL5WL4fl684eYHaqMSox3o+D5oVktzMGOscFKE48sCpMTUtGRTRF3Af1R\nwwIH3V47IEFslSS4oyzI29RW9tumfh6WWl1xVKemxnuqFMY8flRQ0bQZ70AIaf8c\nRZgdDyXtqP2yqzyCjkSoTNmfdMaRTr5zu+PmkuO+goSg5uDosObM4uCK8qgL0ldU\n3qRAbohAOU8kxsUR69Bwwq1jpNpBBez8Fs2l682wOwKBgQD8Br67stUmbwhFDW/Z\np2L5IUfswobATmes83SDAVl/FEOWimTFssSKHYqIR9P5qCMgb1KjiFTQSIct70Ng\nCvzLT6dI0I+DgzAjbaR1j28Xqpm02cdOe03w2pP5hv0yif+Mxngemw8UOvhVxrH7\nzOX2b+CF9nlXlRCZz6jcRB8CAwKBgQDWhRAtJieXmLcywJP+pX9Vu71OEgHj/FMr\n4DkT3bd7xwLmNMVoh0MgQyZcLmXtz3FeSL+jxG4ombHBZvzvyR4eSg28uRLaAOMd\nweS7Y89PTmSj0PyZxGu0YFoV+wFV49p9FkysEEIVcYiVpdUy9MLkynBY5LAU3yiP\no7Ab15KDFwKBgQCAeO/BvufpL7CHgtIBodJSLST9DCyk21L+VxyNq6JzpWDO3L2C\nCh8mSOjVj8f+/Dbr0dPOiTCy/EXspIsz6mXzPieIdsixwa5IYRv00alP5ydziZCP\n8UtJ/CJykN2BZddfa8zPzTtilK0DDMauFUUk2uMZZwt0GgjcX380yYUFAQKBgGNs\nDFFAi70A9Hc7Ndwhi+CKQHR8eA/YFBwTsaB5c96UH83dy1hkyEGdnZu/jVIogJx4\nDwmxsnRytyWxu6zOg3z6SV+cTxZmrtxNztriqWRSKuaZp1kE5f4VYesqCDZsggjT\nWvmsF1Sk5+6jiyowslsjT+qDIvCpdL0N2kMtKCRFAoGBAMz6VrJTGh8pB6CXHI66\nqcISwjlCBvze3UFQHy3BE5Dj5+16YwJ/RbbRbmb8z61GnFRVD84hoSlsoSYvHGUn\nfSTonbAwG0XQcthBhKdgJrSjzOtFmA31QWKYkv5mdXx3ppg5gQRTcmtzfLefJIKZ\nBRECxROv84lI8SyPoZ1vokU4\n-----END PRIVATE KEY-----\n",
+  "client_email": "fatinscricao@fatinscricoes.iam.gserviceaccount.com",
+  "client_id": "117146551208191930262",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fatinscricao%40fatinscricoes.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
