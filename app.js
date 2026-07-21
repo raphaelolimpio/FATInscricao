@@ -97,7 +97,7 @@ async function processPayment() {
     };
 
     try {
-        const response = await fetch('http://localhost:3000/api/checkout', {
+        const response = await fetch('api/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -131,7 +131,7 @@ function iniciarVerificacaoPagamento(pixId) {
     if (statusInterval) clearInterval(statusInterval);
         statusInterval = setInterval(async () => {
             try {
-                const res = await fetch(`http://localhost:3000/api/check-status/${pixId}`);
+                const res = await fetch(`check-status/${pixId}`);
                 const data = await res.json();
                 if (data.status === 'PAID') {
                     clearInterval(statusInterval);
