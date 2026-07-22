@@ -23,8 +23,8 @@ app.use(cors());
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
-    console.log("Recebi GET /");
-    res.status(200).send("Servidor funcionando!");
+    console.log("Recebi /");
+    res.send("Funcionando!");
 });
 
 const API_KEY = process.env.ABACATEPAY_API_KEY;
@@ -388,5 +388,5 @@ async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
 }
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log("Servidor rodando na porta", PORT);
 });
