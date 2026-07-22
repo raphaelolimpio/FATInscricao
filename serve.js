@@ -23,7 +23,8 @@ app.use(cors());
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    console.log("Recebi GET /");
+    res.status(200).send("Servidor funcionando!");
 });
 
 const API_KEY = process.env.ABACATEPAY_API_KEY;
