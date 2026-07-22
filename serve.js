@@ -22,9 +22,8 @@ app.use(cors());
 
 app.use(express.static(__dirname));
 
-app.get("/", (req, res) => {
-    console.log("Recebi /");
-    res.send("Funcionando!");
+app.get("/health", (req,res)=>{
+    res.status(200).send("OK");
 });
 
 const API_KEY = process.env.ABACATEPAY_API_KEY;
@@ -387,6 +386,6 @@ async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
     console.log("Comprovante enviado para", dadosPiloto.email);
 }
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen("0.0.0.0", () => {
     console.log("Servidor rodando na porta", PORT);
 });

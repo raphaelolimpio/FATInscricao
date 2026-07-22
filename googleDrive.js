@@ -5,10 +5,8 @@ const arquivoConfig = path.join(__dirname, "driveFile.json");
 require("dotenv").config();
 
 const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
-    scopes:[
-        "https://www.googleapis.com/auth/drive"
-    ]
+    keyFile: "credenciaisGoogle.json",
+    scopes: ["https://www.googleapis.com/auth/drive"]
 });
 
 const drive = google.drive({
@@ -104,10 +102,10 @@ async function buscarArquivo(folderId) {
         return null;
     }
     return response.data.files[0];
-    
+
 }
 
-async function buscarBanner(){
+async function buscarBanner() {
     return await buscarArquivo(
         process.env.GOOGLE_DRIVE_FOLDER_BANNER_ID
     );
@@ -117,7 +115,7 @@ async function buscarRegulamento() {
     return await buscarArquivo(
         process.env.GOOGLE_DRIVE_FOLDER_REGULAMENTO_ID
     );
-    
+
 }
 
 async function baixarArquivo(fileId, res) {
@@ -132,7 +130,7 @@ async function baixarArquivo(fileId, res) {
     );
 
     arquivo.data.pipe(res);
-    
+
 }
 
 module.exports = {
