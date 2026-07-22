@@ -20,6 +20,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.use(express.static(__dirname));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
 const API_KEY = process.env.ABACATEPAY_API_KEY;
 const AUTORIZATION_API_KEY = process.env.AUTORIZATION_API_KEY;
 const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
@@ -123,7 +129,7 @@ app.get("/regulamento", async (req, res) => {
 
 
 
-app.post('/api/checkout', async (req, res) => {
+app.post("/api/checkout", async (req, res) => {
     try {
         const dados = req.body;
         let valorPix;
@@ -198,7 +204,7 @@ app.post('/api/checkout', async (req, res) => {
     }
 });
 
-app.get('/api/check-status/:pixId', async (req, res) => {
+app.get("/api/check-status/:pixId", async (req, res) => {
     try {
         const { pixId } = req.params;
         const response = await axios.get(
