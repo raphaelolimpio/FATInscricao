@@ -20,11 +20,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use(express.static(__dirname));
 
 app.get("/health", (req,res)=>{
     res.status(200).send("OK");
 });
+
 
 const API_KEY = process.env.ABACATEPAY_API_KEY;
 const AUTORIZATION_API_KEY = process.env.AUTORIZATION_API_KEY;
