@@ -20,6 +20,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.get("/", (req,res)=>{
+    res.sendFile(path.join(__dirname,"index.html"));
+});
+
+app.use(express.static(path.join(__dirname)));
 
 app.get("/health", (req,res)=>{
     res.status(200).send("OK");
@@ -96,7 +101,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
     }
 }
 
-app.get("/banner", async (req, res) => {
+app.get("/api/banner", async (req, res) => {
     const banner = await buscarBanner();
 
     if (!banner) {
@@ -109,7 +114,7 @@ app.get("/banner", async (req, res) => {
     await baixarArquivo(banner.id,res);
 });
 
-app.get("/regulamento", async (req, res) => {
+app.get("/api/regulamento", async (req, res) => {
     const regulamento = await buscarRegulamento();
 
     if (!regulamento) {
@@ -385,6 +390,8 @@ async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
 
     console.log("Comprovante enviado para", dadosPiloto.email);
 }
+
+
 const PORT = process.env.PORT || 3000;
 app.listen("0.0.0.0", () => {
     console.log("Servidor rodando na porta", PORT);
