@@ -38,7 +38,7 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
                 name: nomeArquivo,
 
                 parents: [
-                    process.env.GOOGLE_DRIVE_FOLDER_ID
+                    process.env.GOOGLE_DRIVE_FOLDER_PLANILHA_ID
                 ]
 
             },
@@ -91,6 +91,52 @@ function salvarFileId(fields) {
     );
 }
 
+async function buscarArquivo(folderId) {
+    const response = await drive.files.list({
+        q: `'${folderId}' in parents and trashed=false`,
+        orderBy: "modifiedTime desc",
+        fields: "files(id,name,mimeType)",
+        pageSize: 1
+    });
+    if (response.data.files.length === 0) {
+        return null;
+    }
+    return response.data.files[0];
+    
+}
+
+async function buscarBanner(){
+    return await buscarArquivo(
+        process.env.GOOGLE_DRIVE_FOLDER_BANNER_ID
+    );
+}
+
+async function buscarRegulamento() {
+    return await buscarArquivo(
+        process.env.GOOGLE_DRIVE_FOLDER_REGULAMENTO_ID
+    );
+    
+}
+
+async function baixarArquivo(fileId, res) {
+    const arquivo = await drive.files.get(
+        {
+            fileId,
+            alt: "media"
+        },
+        {
+            responseType: "stream"
+        }
+    );
+
+    arquivo.data.pipe(res);
+    
+}
+
 module.exports = {
-    enviarArquivo
+    enviarArquivo,
+    buscarArquivo,
+    buscarBanner,
+    buscarRegulamento,
+    baixarArquivo
 };

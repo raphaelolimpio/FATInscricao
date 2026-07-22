@@ -9,7 +9,12 @@ require('dotenv').config();
 const PDFDocument = require('pdfkit');
 const path = require('path');
 
-const { enviarArquivo } = require('./googleDrive');
+const {
+    enviarArquivo,
+    buscarBanner,
+    buscarRegulamento,
+    baixarArquivo
+} = require('./googleDrive');
 
 const app = express();
 app.use(express.json());
@@ -19,8 +24,7 @@ const API_KEY = process.env.ABACATEPAY_API_KEY;
 const AUTORIZATION_API_KEY = process.env.AUTORIZATION_API_KEY;
 const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
 
-// Configurar o transporter do nodemailer
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
@@ -71,7 +75,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             cpfResp: dadosPiloto.cpf_do_responsavel || 'N/A',
             numPiloto: dadosPiloto.numero_do_piloto || '',
             categoria: dadosPiloto.categoria || '',
-            valor: (dadosPiloto.amout / 100),
+            valor: (dadosPiloto.amount / 100),
             idPix: pixData.id || '',
             status: pixData.status || 'Pendente',
             dataPagamento: ''
@@ -85,6 +89,37 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
         console.error('Erro ao salvar na planilha:', err);
     }
 }
+
+app.get("/banner", async (req, res) => {
+    const banner = await buscarBanner();
+
+    if (!banner) {
+        return res.status(404).send("banner não encontrado");
+    }
+
+    res.setHeader("Content-Type", "no-cache");
+    res.setHeader("Content-Type", banner.mimeType);
+
+    await baixarArquivo(banner.id,res);
+});
+
+app.get("/regulamento", async (req, res) => {
+    const regulamento = await buscarRegulamento();
+
+    if (!regulamento) {
+        return res.status(404).send("Regulamento não encontrado");
+    }
+
+    res.setHeader("Content-Type", "no-cache");
+    res.setHeader("Content-Type", regulamento.mimeType);
+
+    res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${regulamento.name}"`
+    );
+
+    await baixarArquivo(regulamento.id, res);
+});
 
 
 
@@ -344,5 +379,7 @@ async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
 
     console.log("Comprovante enviado para", dadosPiloto.email);
 }
-
-app.listen(3000, () => console.log('Servidor rodando na porta 3000!'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+});
