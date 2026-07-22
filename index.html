@@ -13,6 +13,7 @@
     <div class="container">
         <!-- Lateral esquerda: Configurada para tamanho exato de imagem ou cor padrão limpa -->
         <div class="event-sidebar sidebar-custom-bg">
+            <img src="/banner" alt="Banner" style="width:100%; height:100%; object-fit:cover;">
         </div>
 
         <!-- Formulário unificado em uma única aba -->
@@ -100,10 +101,13 @@
                     <!-- SEÇÃO DE PAGAMENTO: Logo abaixo do formulário -->
                     <h2 class="form-title">Pagamento</h2>
 
-                    <div class="payment-methods" style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+                    <div class="payment-methods"
+                        style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
                         <div class="payment-opt selected" id="opt-pix" style="text-align: center; cursor: default;">
-                            <svg style="width: 24px; height: 24px; display: block; margin: 0 auto 5px auto;" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z" />
+                            <svg style="width: 24px; height: 24px; display: block; margin: 0 auto 5px auto;"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z" />
                             </svg>
                             Pix (QR Code)
                         </div>
@@ -115,11 +119,17 @@
                             <p style="font-size: 0.9rem; margin-bottom: 15px;">O QR Code e a chave Pix copia e cola
                                 serão exibidos aqui após clicar em Gerar Pix.</p>
                             <div class="pix-qr" id="pix-qr-area">
-                                <div id="pix-loading" style="display:none; color: #4B5563; font-weight: bold;">Gerando seu Pix..</div>
-                                <img id="pix-qr-image" src="" style="width: 220px; height: 220px; display:none; margin: 0 auto 15px auto;" alt="QR Code PIX" />
+                                <div id="pix-loading" style="display:none; color: #4B5563; font-weight: bold;">Gerando
+                                    seu Pix..</div>
+                                <img id="pix-qr-image" src=""
+                                    style="width: 220px; height: 220px; display:none; margin: 0 auto 15px auto;"
+                                    alt="QR Code PIX" />
                             </div>
-                            <div class="pix-code" id="pix-copia-cola" style="display:none; word-break: break-all; background: #F3F4F6; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; margin-bottom: 15px;"></div>
-                            <button type="button" class="btn-copy" id="btn-copy-pix" style="display:none; padding: 8px 16px; cursor: pointer;">Copiar Código
+                            <div class="pix-code" id="pix-copia-cola"
+                                style="display:none; word-break: break-all; background: #F3F4F6; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; margin-bottom: 15px;">
+                            </div>
+                            <button type="button" class="btn-copy" id="btn-copy-pix"
+                                style="display:none; padding: 8px 16px; cursor: pointer;">Copiar Código
                                 Pix</button>
                         </div>
                     </div>
