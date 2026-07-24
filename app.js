@@ -5,7 +5,6 @@ const formRegistro = document.getElementById('registration-form');
 const idadeInput = document.getElementById('idade');
 const respInput = document.getElementById('nome_do_responsavel');
 const cpfRespInput = document.getElementById('cpf_do_responsavel');
-
 const btnSubmitPayment = document.getElementById('btn-submit-payment');
 const btnCopyPix = document.getElementById('btn-copy-pix');
 
@@ -92,7 +91,8 @@ async function processPayment() {
         nome_do_responsavel: respInput.value,
         cpf_do_responsavel: cpfRespInput.value.replace(/\D/g, ''),
         numero_do_piloto: document.getElementById('numero_do_piloto').value,
-        categoria: document.getElementById('tshirt').value,
+        categoria: document.getElementById('categoria').value,
+        tamanho_Camisa: document.getElementById('tamanho_Camisa').value,
         payment_method: selectedMethod
     };
 

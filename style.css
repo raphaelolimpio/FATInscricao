@@ -390,12 +390,13 @@ select:focus {
 }
 .sidebar-custom-bg {
     width: 376px;
-    min-height: 926.23px;
-    /* Para adicionar sua imagem futuramente, basta descomentar a linha abaixo e alterar o caminho: */
-    /* background-image: url('caminho-da-sua-imagem.jpg'); */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1E1B4B;
+
 }
 
 /* Caixa estilizada do regulamento */

@@ -66,6 +66,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
                 { header: 'CPF Responsável', key: 'cpfResp', width: 16 },
                 { header: 'Nº Piloto', key: 'numPiloto', width: 12 },
                 { header: 'Categoria', key: 'categoria', width: 15 },
+                { header: 'tamanho_Camisa', key: 'tamanho_Camisa', width: 15 },
                 { header: 'Valor (R$)', key: 'valor', width: 12 },
                 { header: 'ID Pix', key: 'idPix', width: 32 },
                 { header: 'Status Pagamento', key: 'status', width: 18 },
@@ -86,6 +87,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             cpfResp: dadosPiloto.cpf_do_responsavel || 'N/A',
             numPiloto: dadosPiloto.numero_do_piloto || '',
             categoria: dadosPiloto.categoria || '',
+            tamanho_Camisa: dadosPiloto.tamanho_Camisa || '',
             valor: (dadosPiloto.amount / 100),
             idPix: pixData.id || '',
             status: pixData.status || 'Pendente',
@@ -305,6 +307,7 @@ function gerarComprovante(dadosPiloto, pixData) {
         doc.text(`Nome do Piloto: ${dadosPiloto.name_do_piloto}`);
         doc.text(`CPF do Piloto: ${dadosPiloto.cpf_do_piloto}`);
         doc.text(`Categoria: ${dadosPiloto.categoria}`);
+        doc.text(`Tamanho da camisa: ${dadosPiloto.tamanho_Camisa}`);
         doc.text(`E-mail: ${dadosPiloto.email}`);
         doc.text(`Telefone: ${dadosPiloto.telefone}`);
 
@@ -348,6 +351,7 @@ async function getDadosPilotoByPixId(pixId) {
                 cpf_do_responsavel: row.getCell(9).value,
                 numero_do_piloto: row.getCell(10).value,
                 categoria: row.getCell(11).value,
+                tamanho_Camisa: row.getCell(11).value,
                 amount: row.getCell(12).value * 100,
             };
         }
