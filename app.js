@@ -7,6 +7,7 @@ const respInput = document.getElementById('nome_do_responsavel');
 const cpfRespInput = document.getElementById('cpf_do_responsavel');
 const btnSubmitPayment = document.getElementById('btn-submit-payment');
 const btnCopyPix = document.getElementById('btn-copy-pix');
+const containerResponsavel = document.getElementById('container-responsavel');
 
 document.addEventListener('DOMContentLoaded', () => {
     applyCpfMask(document.getElementById('cpf_do_piloto'));
@@ -42,15 +43,22 @@ function applyCpfMask(input) {
 }
 
 function verificarIdadeObrigatoriedade() {
-    const idade = parseInt(idadeInput.value) || 0;
-    if (idade >= 18) {
+    const idade = parseInt(idadeInput.value, 10);
+
+    if (!idade || idade >= 18) {
+
+        containerResponsavel.style.display = 'none';
         respInput.removeAttribute('required');
-        respInput.placeholder = "Digite o nome do responsável (Opcional)";
         cpfRespInput.removeAttribute('required');
-        cpfRespInput.placeholder = "000.000.000-00 (Opcional)";
+        respInput.value = '';
+        cpfRespInput.value = '';
+
     } else {
+        containerResponsavel.style.display = 'block';
+        
         respInput.setAttribute('required', 'required');
         respInput.placeholder = "Digite o nome do responsável (Obrigatório)";
+        
         cpfRespInput.setAttribute('required', 'required');
         cpfRespInput.placeholder = "000.000.000-00 (Obrigatório)";
     }
