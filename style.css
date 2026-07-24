@@ -29,13 +29,14 @@ body {
 
 .container {
     width: 100%;
-    max-width: 900px;
+    max-width: 980px;
     background: var(--surface);
     border-radius: 16px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     display: flex;
     flex-direction: row;
+    align-items: stretch;
 }
 
 @media (max-width: 768px) {
@@ -389,13 +390,14 @@ select:focus {
     height: 32px;
 }
 .sidebar-custom-bg {
-    width: 376px;
+    flex: 1;
+    max-width: 400px;
     padding: 0;
     overflow: hidden;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    background: #1E1B4B;
+    background: #0D102D;
 
 }
 
@@ -411,8 +413,9 @@ select:focus {
 
 .sidebar-custom-bg img {
     max-width: 100%;
-    height: auto;
+    height: 100%;
     object-fit: contain;
+    object-position: top center;
 }
 
 .regulation-download {
