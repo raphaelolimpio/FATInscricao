@@ -4,8 +4,13 @@ const path = require("path");
 const arquivoConfig = path.join(__dirname, "driveFile.json");
 require("dotenv").config();
 
+const privateKey = process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined;
+
 const auth = new google.auth.GoogleAuth({
-    keyFile: "credenciaisGoogle.json",
+    credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: privateKey,
+    },
     scopes: ["https://www.googleapis.com/auth/drive"]
 });
 
