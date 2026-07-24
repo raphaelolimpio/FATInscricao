@@ -101,7 +101,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
     }
 }
 
-app.get("/api/banner", async (req, res) => {
+app.get("/banner", async (req, res) => {
     const banner = await buscarBanner();
 
     if (!banner) {
@@ -114,7 +114,7 @@ app.get("/api/banner", async (req, res) => {
     await baixarArquivo(banner.id,res);
 });
 
-app.get("/api/regulamento", async (req, res) => {
+app.get("/regulamento", async (req, res) => {
     const regulamento = await buscarRegulamento();
 
     if (!regulamento) {
@@ -134,7 +134,7 @@ app.get("/api/regulamento", async (req, res) => {
 
 
 
-app.post("/api/checkout", async (req, res) => {
+app.post("/checkout", async (req, res) => {
     try {
         const dados = req.body;
         let valorPix;
@@ -209,7 +209,7 @@ app.post("/api/checkout", async (req, res) => {
     }
 });
 
-app.get("/api/check-status/:pixId", async (req, res) => {
+app.get("/check-status/:pixId", async (req, res) => {
     try {
         const { pixId } = req.params;
         const response = await axios.get(
