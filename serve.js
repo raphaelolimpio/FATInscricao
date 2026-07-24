@@ -134,7 +134,7 @@ app.get("/regulamento", async (req, res) => {
 
 
 
-app.post("/checkout", async (req, res) => {
+app.post("/api/checkout", async (req, res) => {
     try {
         const dados = req.body;
         let valorPix;
@@ -209,7 +209,7 @@ app.post("/checkout", async (req, res) => {
     }
 });
 
-app.get("/check-status/:pixId", async (req, res) => {
+app.get("/api/check-status/:pixId", async (req, res) => {
     try {
         const { pixId } = req.params;
         const response = await axios.get(
@@ -234,7 +234,7 @@ app.get("/check-status/:pixId", async (req, res) => {
 
         console.log(`Status do Pix ${pixId}:`, status);
 
-        if (status === 'PAID') {
+        if (status === 'PAID' && dadosPiloto.status !== 'Pago') {
             await atualizarStatusPlanilha(pixId, 'Pago');
 
             const pdf = await gerarComprovante(dadosPiloto, {
