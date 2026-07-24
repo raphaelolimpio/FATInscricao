@@ -393,7 +393,7 @@ select:focus {
     padding: 0;
     overflow: hidden;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     background: #1E1B4B;
 
@@ -407,6 +407,12 @@ select:focus {
     padding: 20px;
     margin-top: 25px;
     margin-bottom: 25px;
+}
+
+.sidebar-custom-bg img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
 }
 
 .regulation-download {
