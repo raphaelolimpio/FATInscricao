@@ -117,8 +117,12 @@ async function processPayment() {
             throw new Error(data.message || 'Erro no processamento do Pix.');
         }
 
+        const qrSrc = data.brCodeBase64.startsWith('data:image') 
+            ? data.brCodeBase64 
+            : `data:image/png;base64,${data.brCodeBase64}`; 
+
         document.getElementById('pix-loading').style.display = 'none';
-        document.getElementById('pix-qr-image').src = data.brCodeBase64;
+        document.getElementById('pix-qr-image').src = qrSrc;
         document.getElementById('pix-qr-image').style.display = 'block';
         document.getElementById('pix-copia-cola').innerText = data.brCode;
         document.getElementById('pix-copia-cola').style.display = 'block';
