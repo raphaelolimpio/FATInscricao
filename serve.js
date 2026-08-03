@@ -46,24 +46,23 @@ const transporter = nodemailer.createTransport({
 
 async function salvarnaPlanilha(dadosPiloto, pixData) {
     try {
-        // 1. TENTA BAIXAR A PLANILHA ATUALIZADA DO GOOGLE DRIVE PRIMEIRO
+        // 1. Força o download síncrono da versão mais recente que está no Google Drive
         try {
             await baixarArquivoDrive(NOME_ARQUIVO_EXCEL);
-            console.log("Planilha sincronizada do Google Drive com sucesso.");
         } catch (dlErr) {
-            console.log("Aviso: Criando nova planilha local se não existir no Drive.");
+            console.log("Não foi possível baixar do Drive (criará arquivo local se necessário):", dlErr.message);
         }
 
         const workbook = new ExcelJS.Workbook();
         let worksheet;
 
-        // 2. LÊ O ARQUIVO LOCAL JÁ COM TODOS OS PILOTOS ANTERIORES
+        // 2. Carrega a planilha que veio do Drive
         if (fs.existsSync(NOME_ARQUIVO_EXCEL)) {
             await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
             worksheet = workbook.getWorksheet('Inscrições');
         }
 
-        // Se a aba ainda não existir, cria a estrutura inicial
+        // Se por acaso o arquivo veio limpo ou sem a aba, recria os cabeçalhos
         if (!worksheet) {
             worksheet = workbook.addWorksheet('Inscrições');
             worksheet.columns = [
@@ -87,7 +86,7 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             worksheet.getRow(1).font = { bold: true };
         }
 
-        // 3. ADICIONA O NOVO PILOTO NO FINAL DA PLANILHA
+        // 3. Adiciona a nova inscrição no FINAL de todas as linhas já existentes
         worksheet.addRow({
             dataHora: new Date().toLocaleString('pt-BR'),
             nome: dadosPiloto.name_do_piloto || '',
@@ -107,11 +106,11 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             dataPagamento: ''
         });
 
-        // 4. SALVA E FAZ O UPLOAD DA VERSÃO COMPLETA E ACUMULADA
+        // 4. Grava no disco e sobe para o Google Drive
         await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
         await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
 
-        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} salva na planilha com sucesso!`);
+        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} adicionada e sincronizada com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
     }

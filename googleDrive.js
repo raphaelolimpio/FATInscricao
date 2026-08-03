@@ -60,7 +60,7 @@ async function baixarArquivoDrive(caminhoDestinoLocal) {
 
     const response = await drive.files.get(
         {fileId: driveFileId, alt: "media"},
-        {responseType: "stream"}
+        {responseType: "arraybuffer"}
     );
 
     return new Promise((resolve, reject) => {
