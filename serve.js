@@ -95,8 +95,12 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
         });
 
         await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
-        await enviarArquivo(NOME_ARQUIVO_EXCEL,
-            "inscricoes_pilotos.xlsx");
+        try {
+            await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
+        } catch (driveErr) {
+            console.error('Erro ao enviar arquivo para o Google Drive:', driveErr.message);
+        }
+
         console.log(`Incrição do piloto ${dadosPiloto.name_do_piloto} salva na planilha com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
@@ -271,15 +275,20 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
         worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
 
-            if (row.getCell(13).value === pixId && row.getCell(14).value !== novoStatus) {
-                row.getCell(14).value = novoStatus;
-                row.getCell(15).value = new Date().toLocaleString('pt-BR');
+            if (row.getCell(14).value === pixId && row.getCell(15).value !== novoStatus) {
+                row.getCell(15).value = novoStatus;
+                row.getCell(16).value = new Date().toLocaleString('pt-BR');
                 alterado = true;
             }
         });
 
         if (alterado) {
             await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
+            try{
+                await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
+            } catch (driveErr) {
+                console.error('Erro ao enviar arquivo para o Google Drive:', driveErr.message);
+            }
             console.log(`Status do pagamento para Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
         }
     } catch (err) {
@@ -354,12 +363,14 @@ async function getDadosPilotoByPixId(pixId) {
                 cpf_do_responsavel: row.getCell(9).value,
                 numero_do_piloto: row.getCell(10).value,
                 categoria: row.getCell(11).value,
-                tamanho_Camisa: row.getCell(11).value,
-                amount: row.getCell(12).value * 100,
+                tamanho_Camisa: row.getCell(12).value,
+                amount: row.getCell(13).value * 100,
+                status: row.getCell(15).value,
             };
         }
     });
     return piloto;
+
 }
 
 async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {

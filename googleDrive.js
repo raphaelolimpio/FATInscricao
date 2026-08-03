@@ -26,8 +26,7 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
 
     const media = {
 
-        mimeType:
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
         body: fs.createReadStream(caminhoArquivo)
 
@@ -51,7 +50,8 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
 
             media,
 
-            fields: "id"
+            fields: "id",
+            supportsAllDrives: true
 
         });
 
