@@ -359,11 +359,6 @@ function gerarComprovante(dadosPiloto, pixData) {
 
 async function getDadosPilotoByPixId(pixId) {
 
-    try {
-        await baixarArquivoDrive(NOME_ARQUIVO_EXCEL);
-    } catch (error) {
-        console.error('Erro ao baixar arquivo do Google Drive:', error.message);
-    }
     if (!fs.existsSync(NOME_ARQUIVO_EXCEL)) return null;
 
     const workbook = new ExcelJS.Workbook();
@@ -372,27 +367,30 @@ async function getDadosPilotoByPixId(pixId) {
 
     let piloto = null;
 
-    worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
+    if (worksheet) {
 
-        if (row.getCell(14).value === pixId) {
-            piloto = {
-                name_do_piloto: row.getCell(2).value,
-                cpf_do_piloto: row.getCell(3).value,
-                email: row.getCell(4).value,
-                telefone: row.getCell(5).value,
-                numero_da_cba: row.getCell(6).value,
-                idade: row.getCell(7).value,
-                nome_do_responsavel: row.getCell(8).value,
-                cpf_do_responsavel: row.getCell(9).value,
-                numero_do_piloto: row.getCell(10).value,
-                categoria: row.getCell(11).value,
-                tamanho_Camisa: row.getCell(12).value,
-                amount: Number(row.getCell(13).value) * 100,
-                status: row.getCell(15).value
-            };
-        }
-    });
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return;
+
+            if (row.getCell(14).value === pixId) {
+                piloto = {
+                    name_do_piloto: row.getCell(2).value,
+                    cpf_do_piloto: row.getCell(3).value,
+                    email: row.getCell(4).value,
+                    telefone: row.getCell(5).value,
+                    numero_da_cba: row.getCell(6).value,
+                    idade: row.getCell(7).value,
+                    nome_do_responsavel: row.getCell(8).value,
+                    cpf_do_responsavel: row.getCell(9).value,
+                    numero_do_piloto: row.getCell(10).value,
+                    categoria: row.getCell(11).value,
+                    tamanho_Camisa: row.getCell(12).value,
+                    amount: Number(row.getCell(13).value) * 100,
+                    status: row.getCell(15).value
+                };
+            }
+        });
+    }
     return piloto;
 
 }

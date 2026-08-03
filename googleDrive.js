@@ -59,17 +59,11 @@ async function baixarArquivoDrive(caminhoDestinoLocal) {
     }
 
     const response = await drive.files.get(
-        {fileId: driveFileId, alt: "media"},
+        {fileId: driveFileId, alt: "media", supportsAllDrives: true},
         {responseType: "arraybuffer"}
     );
 
-    return new Promise((resolve, reject) => {
-        const dest = fs.createWriteStream(caminhoDestinoLocal);
-        response.data
-            .on("end", () => resolve())
-            .on("error", (err) => reject(err))
-            .pipe(dest);
-    });
+    fs.writeFileSync(caminhoDestinoLocal, Buffer.from(response.data));
 }
 
 
