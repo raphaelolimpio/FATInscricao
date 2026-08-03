@@ -51,12 +51,15 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
     return fileId;
 
 }
-async function baixarArquivoDrive(fileId, caminhoDestinoLocal) {
-    const fileId = process.env.GOOGLE_DRIVE_FILE_ID;
-    if(!fileId) return;
+async function baixarArquivoDrive(caminhoDestinoLocal) {
+    const driveFileId = process.env.GOOGLE_DRIVE_FILE_ID;
+    if(!driveFileId) {
+        console.error("GOOGLE_DRIVE_FILE_ID não está definida");
+        return;
+    }
 
     const response = await drive.files.get(
-        {fileId: fileId, alt: "media"},
+        {fileId: driveFileId, alt: "media"},
         {responseType: "stream"}
     );
 
