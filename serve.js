@@ -351,7 +351,7 @@ async function getDadosPilotoByPixId(pixId) {
     worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
 
-        if (row.getCell(13).value === pixId) {
+        if (row.getCell(14).value === pixId) {
             piloto = {
                 name_do_piloto: row.getCell(2).value,
                 cpf_do_piloto: row.getCell(3).value,
@@ -364,8 +364,8 @@ async function getDadosPilotoByPixId(pixId) {
                 numero_do_piloto: row.getCell(10).value,
                 categoria: row.getCell(11).value,
                 tamanho_Camisa: row.getCell(12).value,
-                amount: row.getCell(13).value * 100,
-                status: row.getCell(15).value,
+                amount: Number(row.getCell(13).value) * 100, 
+                status: row.getCell(15).value               
             };
         }
     });

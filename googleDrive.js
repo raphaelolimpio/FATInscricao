@@ -22,7 +22,7 @@ const drive = google.drive({
 
 async function enviarArquivo(caminhoArquivo, nomeArquivo) {
 
-    const fileId = getFileId();
+    const fileId = process.env.GOOGLE_DRIVE_FILE_ID || getFileId();
 
     const media = {
 
@@ -34,50 +34,25 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
 
     if (!fileId) {
 
-        console.log("Criando arquivo no Drive...");
-
-        const response = await drive.files.create({
-
-            resource: {
-
-                name: nomeArquivo,
-
-                parents: [
-                    process.env.GOOGLE_DRIVE_FOLDER_PLANILHA_ID
-                ]
-
-            },
-
-            media,
-
-            fields: "id",
-            supportsAllDrives: true
-
-        });
-
-        salvarFileId(response.data.id);
-
-        console.log("Arquivo criado!");
-
-        return response.data.id;
-
+        console.log("Nenhum ID de planilha configurado em GOOGLE_DRIVE_FILE_ID.");
+        return null;
     }
-
-    console.log("Atualizando arquivo existente...");
+    console.log("Atualizando planilha existente no Google Drive...");
 
     await drive.files.update({
-
-        fileId,
-
-        media
-
+        fileId: fileId,
+        media: media,
+        supportsAllDrives: true
     });
 
-    console.log("Arquivo atualizado!");
+
+    console.log("Arquivo criado!");
 
     return fileId;
 
 }
+
+
 
 function getFileId() {
     if (!fs.existsSync(arquivoConfig))
