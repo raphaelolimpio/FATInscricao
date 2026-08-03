@@ -20,13 +20,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.get("/", (req,res)=>{
-    res.sendFile(path.join(__dirname,"index.html"));
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.use(express.static(path.join(__dirname)));
 
-app.get("/health", (req,res)=>{
+app.get("/health", (req, res) => {
     res.status(200).send("OK");
 });
 
@@ -45,15 +45,30 @@ const transporter = nodemailer.createTransport({
 
 async function salvarnaPlanilha(dadosPiloto, pixData) {
     try {
+
+        const fileId = process.env.GOOGLE_DRIVE_FILE_ID;
+
+        if (!fileId) {
+            try {
+                const driveResponse = await drive.files.get(
+                    { fileId: fileId, alt: 'media' },
+                    { responseType: 'arraybuffer' }
+                );
+                fs.writeFileSync(NOME_ARQUIVO_EXCEL, Buffer.from(driveResponse.data));
+                console.log('Arquivo Excel baixado do Google Drive com sucesso.');
+            } catch (dlErr) {
+                console.error("Não foi possivel baixar do drive (criará arquivo local se necessário):", dlErr.message);
+            }
+        }
         const workbook = new ExcelJS.Workbook();
         let worksheet;
 
         if (fs.existsSync(NOME_ARQUIVO_EXCEL)) {
             await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
             worksheet = workbook.getWorksheet('Inscrições');
-        } else {
+        }
+        if (!worksheet) {
             worksheet = workbook.addWorksheet('Inscrições');
-
             worksheet.columns = [
                 { header: 'Data/Hora', key: 'dataHora', width: 22 },
                 { header: 'Nome do Piloto', key: 'nome', width: 25 },
@@ -95,12 +110,8 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
         });
 
         await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
-        try {
-            await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
-        } catch (driveErr) {
-            console.error('Erro ao enviar arquivo para o Google Drive:', driveErr.message);
-        }
-
+        await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
+        
         console.log(`Incrição do piloto ${dadosPiloto.name_do_piloto} salva na planilha com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
@@ -117,7 +128,7 @@ app.get("/banner", async (req, res) => {
     res.setHeader("Content-Type", "no-cache");
     res.setHeader("Content-Type", banner.mimeType);
 
-    await baixarArquivo(banner.id,res);
+    await baixarArquivo(banner.id, res);
 });
 
 app.get("/regulamento", async (req, res) => {
@@ -145,7 +156,7 @@ app.post("/api/checkout", async (req, res) => {
         const dados = req.body;
         let valorPix;
 
-        if (dados.categoria === "M" ) {
+        if (dados.categoria === "M") {
             valorPix = 100;
         } else if (dados.categoria === "C") {
             valorPix = 200;
@@ -293,7 +304,7 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
 
         if (alterado) {
             await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
-            try{
+            try {
                 await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
             } catch (driveErr) {
                 console.error('Erro ao enviar arquivo para o Google Drive:', driveErr.message);
@@ -373,8 +384,8 @@ async function getDadosPilotoByPixId(pixId) {
                 numero_do_piloto: row.getCell(10).value,
                 categoria: row.getCell(11).value,
                 tamanho_Camisa: row.getCell(12).value,
-                amount: Number(row.getCell(13).value) * 100, 
-                status: row.getCell(15).value               
+                amount: Number(row.getCell(13).value) * 100,
+                status: row.getCell(15).value
             };
         }
     });
