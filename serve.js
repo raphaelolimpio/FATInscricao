@@ -46,71 +46,29 @@ const transporter = nodemailer.createTransport({
 
 async function salvarnaPlanilha(dadosPiloto, pixData) {
     try {
-        // 1. Força o download síncrono da versão mais recente que está no Google Drive
-        try {
-            await baixarArquivoDrive(NOME_ARQUIVO_EXCEL);
-        } catch (dlErr) {
-            console.log("Não foi possível baixar do Drive (criará arquivo local se necessário):", dlErr.message);
-        }
+        const novaLinha = [
+            new Date().toLocaleString('pt-BR'),
+            dadosPiloto.name_do_piloto || '',
+            dadosPiloto.cpf_do_piloto || '',
+            dadosPiloto.email || '',
+            dadosPiloto.telefone || '',
+            dadosPiloto.numero_da_cba || '',
+            dadosPiloto.idade || '',
+            dadosPiloto.nome_do_responsavel || 'N/A',
+            dadosPiloto.cpf_do_responsavel || 'N/A',
+            dadosPiloto.numero_do_piloto || '',
+            dadosPiloto.categoria || '',
+            dadosPiloto.tamanho_Camisa || '',
+            (dadosPiloto.amount / 100),
+            pixData.id || '',
+            pixData.status || 'Pendente',
+            ''
+        ];
 
-        const workbook = new ExcelJS.Workbook();
-        let worksheet;
+        // Adiciona a linha de maneira thread-safe via Google Sheets API
+        await appendLinhaPlanilha(novaLinha);
 
-        // 2. Carrega a planilha que veio do Drive
-        if (fs.existsSync(NOME_ARQUIVO_EXCEL)) {
-            await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
-            worksheet = workbook.getWorksheet('Inscrições');
-        }
-
-        // Se por acaso o arquivo veio limpo ou sem a aba, recria os cabeçalhos
-        if (!worksheet) {
-            worksheet = workbook.addWorksheet('Inscrições');
-            worksheet.columns = [
-                { header: 'Data/Hora', key: 'dataHora', width: 22 },
-                { header: 'Nome do Piloto', key: 'nome', width: 25 },
-                { header: 'CPF Piloto', key: 'cpf', width: 16 },
-                { header: 'E-mail', key: 'email', width: 25 },
-                { header: 'Telefone', key: 'telefone', width: 16 },
-                { header: 'Nº CBA', key: 'cba', width: 18 },
-                { header: 'Idade', key: 'idade', width: 10 },
-                { header: 'Nome Responsável', key: 'nomeResp', width: 25 },
-                { header: 'CPF Responsável', key: 'cpfResp', width: 16 },
-                { header: 'Nº Piloto', key: 'numPiloto', width: 12 },
-                { header: 'Categoria', key: 'categoria', width: 15 },
-                { header: 'tamanho_Camisa', key: 'tamanho_Camisa', width: 15 },
-                { header: 'Valor (R$)', key: 'valor', width: 12 },
-                { header: 'ID Pix', key: 'idPix', width: 32 },
-                { header: 'Status Pagamento', key: 'status', width: 18 },
-                { header: 'Data/Hora Pagamento', key: 'dataPagamento', width: 22 }
-            ];
-            worksheet.getRow(1).font = { bold: true };
-        }
-
-        // 3. Adiciona a nova inscrição no FINAL de todas as linhas já existentes
-        worksheet.addRow({
-            dataHora: new Date().toLocaleString('pt-BR'),
-            nome: dadosPiloto.name_do_piloto || '',
-            cpf: dadosPiloto.cpf_do_piloto || '',
-            email: dadosPiloto.email || '',
-            telefone: dadosPiloto.telefone || '',
-            cba: dadosPiloto.numero_da_cba || '',
-            idade: dadosPiloto.idade || '',
-            nomeResp: dadosPiloto.nome_do_responsavel || 'N/A',
-            cpfResp: dadosPiloto.cpf_do_responsavel || 'N/A',
-            numPiloto: dadosPiloto.numero_do_piloto || '',
-            categoria: dadosPiloto.categoria || '',
-            tamanho_Camisa: dadosPiloto.tamanho_Camisa || '',
-            valor: (dadosPiloto.amount / 100),
-            idPix: pixData.id || '',
-            status: pixData.status || 'Pendente',
-            dataPagamento: ''
-        });
-
-        // 4. Grava no disco e sobe para o Google Drive
-        await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
-        await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
-
-        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} adicionada e sincronizada com sucesso!`);
+        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} sincronizada com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
     }
