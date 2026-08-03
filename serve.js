@@ -228,15 +228,24 @@ app.get("/api/check-status/:pixId", async (req, res) => {
             });
         }
 
-        console.log(`Status do Pix ${pixId}:`, status);
 
-        if (status === 'PAID' && dadosPiloto.status !== 'Pago') {
-            await atualizarStatusPlanilha(pixId, 'Pago');
+        if (status === 'PAID') {
+            const atualizado = await atualizarStatusPlanilha(pixId, 'Pago');
 
-            const pdf = await gerarComprovante(dadosPiloto, {
-                id: pixId,
-            });
-            await enviarComprovanteEmail(dadosPiloto, pdf);
+            if(atualizado) {
+                const pdf = await gerarComprovante(dadosPiloto, {
+                    id: pixId,
+                });
+                try{
+                    await enviarComprovanteEmail(dadosPiloto, pdf);
+                } catch (emailErr) {
+                    console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
+                } finally {
+                    if(fs.existsSync(pdf)) {
+                        fs.unlinkSync(pdf);
+                    }
+                }
+            }
         }
         return res.status(200).json({
             sucesso: true,
@@ -263,15 +272,13 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
         const rows = response.data.values;
         if (!rows) return;
 
-        // 2. Localiza a linha correspondente ao Pix ID
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
 
             if (row[13] === pixId && row[14] !== novoStatus) {
-                const rowNum = i + 1; // Ajusta o número da linha na planilha (base 1)
+                const rowNum = i + 1;
                 const dataPagamento = new Date().toLocaleString('pt-BR');
 
-                // 3. Atualiza somente o Status (Coluna O) e a Data (Coluna P)
                 await sheets.spreadsheets.values.update({
                     spreadsheetId,
                     range: `Inscrições!O${rowNum}:P${rowNum}`,
@@ -282,9 +289,10 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
                 });
 
                 console.log(`Status do Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
-                break;
+                return true;
             }
         }
+        return false;
     } catch (err) {
         console.error('Erro ao atualizar status na planilha:', err);
     }
@@ -305,9 +313,9 @@ function gerarComprovante(dadosPiloto, pixData) {
         });
 
         const stream = fs.createWriteStream(caminho);
+
         doc.pipe(stream);
         doc.fontSize(20).text('Comprovante de Inscrição', { align: 'center' });
-
         doc.moveDown();
         doc.fontSize(12);
         doc.text(`Nome do Piloto: ${dadosPiloto.name_do_piloto}`);
@@ -316,9 +324,7 @@ function gerarComprovante(dadosPiloto, pixData) {
         doc.text(`Tamanho da camisa: ${dadosPiloto.tamanho_Camisa}`);
         doc.text(`E-mail: ${dadosPiloto.email}`);
         doc.text(`Telefone: ${dadosPiloto.telefone}`);
-
         doc.moveDown();
-
         doc.text(`valor: R$ ${(dadosPiloto.amount / 100).toFixed(2)}`);
         doc.text(`Status: PAGO`);
         doc.text(`Data/Hora do Pagamento: ${new Date().toLocaleString('pt-BR')}`);
