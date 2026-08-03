@@ -156,13 +156,22 @@ app.post("/api/checkout", async (req, res) => {
 
         dados.amount = valorPix;
 
+        const cpfLimpo = (dados.cpf_do_piloto || "").replace(/\D/g, '');
+
+        if (cpfLimpo.length !== 11) {
+            return res.status(400).json({
+                sucesso: false,
+                message: 'CPF do piloto inválido (deve conter 11 dígitos).'
+            });
+        }
+
         const clienteResponse = await axios.post(
             "https://api.abacatepay.com/v1/customer/create",
             {
                 name: dados.name_do_piloto,
                 email: dados.email,
-                cellphone: dados.telefone,
-                taxId: dados.cpf_do_piloto,
+                cellphone: dados.telefone ? dados.telefone.replace(/\D/g, '') : '',
+                taxId: cpfLimpo,
             },
             {
                 headers: {
