@@ -147,7 +147,7 @@ app.post("/api/checkout", async (req, res) => {
             valorPix = 200;
         }
         else {
-            valorPix = 10;
+            valorPix = 100;
         }
 
         dados.amount = valorPix;
