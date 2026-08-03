@@ -55,10 +55,10 @@ function verificarIdadeObrigatoriedade() {
 
     } else {
         containerResponsavel.style.display = 'block';
-        
+
         respInput.setAttribute('required', 'required');
         respInput.placeholder = "Digite o nome do responsável (Obrigatório)";
-        
+
         cpfRespInput.setAttribute('required', 'required');
         cpfRespInput.placeholder = "000.000.000-00 (Obrigatório)";
     }
@@ -117,12 +117,14 @@ async function processPayment() {
             throw new Error(data.message || 'Erro no processamento do Pix.');
         }
 
-        const qrSrc = data.brCodeBase64.startsWith('data:image') 
-            ? data.brCodeBase64 
-            : `data:image/png;base64,${data.brCodeBase64}`; 
+        const qrBase64 = data.brCodeBase64;
+
+        const srcFormatado = qrBase64.startsWith('data:image')
+            ? qrBase64
+            : `data:image/png;base64,${qrBase64}`;
 
         document.getElementById('pix-loading').style.display = 'none';
-        document.getElementById('pix-qr-image').src = qrSrc;
+        document.getElementById('pix-qr-image').src = srcFormatado;
         document.getElementById('pix-qr-image').style.display = 'block';
         document.getElementById('pix-copia-cola').innerText = data.brCode;
         document.getElementById('pix-copia-cola').style.display = 'block';
@@ -141,18 +143,18 @@ async function processPayment() {
 
 function iniciarVerificacaoPagamento(pixId) {
     if (statusInterval) clearInterval(statusInterval);
-        statusInterval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/check-status/${pixId}`);
-                const data = await res.json();
-                if (data.status === 'PAID') {
-                    clearInterval(statusInterval);
-                    exibirSucessoPagamento();
-                }
-            } catch (err) {
-                console.error('Erro ao verificar status do pagamento:', err);
+    statusInterval = setInterval(async () => {
+        try {
+            const res = await fetch(`/api/check-status/${pixId}`);
+            const data = await res.json();
+            if (data.status === 'PAID') {
+                clearInterval(statusInterval);
+                exibirSucessoPagamento();
             }
-        }, 3000);
+        } catch (err) {
+            console.error('Erro ao verificar status do pagamento:', err);
+        }
+    }, 3000);
 }
 
 function exibirSucessoPagamento() {
@@ -169,5 +171,5 @@ function exibirSucessoPagamento() {
         </div>
     `;
     btnSubmitPayment.innerText = "Incrição Conluida";
-    btnSubmitPayment.style.backgroundColor = "#10B981"; 
+    btnSubmitPayment.style.backgroundColor = "#10B981";
 }
