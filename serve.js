@@ -13,7 +13,8 @@ const {
     enviarArquivo,
     buscarBanner,
     buscarRegulamento,
-    baixarArquivo
+    baixarArquivo,
+    baixarArquivoDrive
 } = require('./googleDrive');
 
 const app = express();
@@ -45,28 +46,24 @@ const transporter = nodemailer.createTransport({
 
 async function salvarnaPlanilha(dadosPiloto, pixData) {
     try {
-
-        const fileId = process.env.GOOGLE_DRIVE_FILE_ID;
-
-        if (!fileId) {
-            try {
-                const driveResponse = await drive.files.get(
-                    { fileId: fileId, alt: 'media' },
-                    { responseType: 'arraybuffer' }
-                );
-                fs.writeFileSync(NOME_ARQUIVO_EXCEL, Buffer.from(driveResponse.data));
-                console.log('Arquivo Excel baixado do Google Drive com sucesso.');
-            } catch (dlErr) {
-                console.error("Não foi possivel baixar do drive (criará arquivo local se necessário):", dlErr.message);
-            }
+        // 1. TENTA BAIXAR A PLANILHA ATUALIZADA DO GOOGLE DRIVE PRIMEIRO
+        try {
+            await baixarArquivoDrive(NOME_ARQUIVO_EXCEL);
+            console.log("Planilha sincronizada do Google Drive com sucesso.");
+        } catch (dlErr) {
+            console.log("Aviso: Criando nova planilha local se não existir no Drive.");
         }
+
         const workbook = new ExcelJS.Workbook();
         let worksheet;
 
+        // 2. LÊ O ARQUIVO LOCAL JÁ COM TODOS OS PILOTOS ANTERIORES
         if (fs.existsSync(NOME_ARQUIVO_EXCEL)) {
             await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
             worksheet = workbook.getWorksheet('Inscrições');
         }
+
+        // Se a aba ainda não existir, cria a estrutura inicial
         if (!worksheet) {
             worksheet = workbook.addWorksheet('Inscrições');
             worksheet.columns = [
@@ -87,9 +84,10 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
                 { header: 'Status Pagamento', key: 'status', width: 18 },
                 { header: 'Data/Hora Pagamento', key: 'dataPagamento', width: 22 }
             ];
-
             worksheet.getRow(1).font = { bold: true };
         }
+
+        // 3. ADICIONA O NOVO PILOTO NO FINAL DA PLANILHA
         worksheet.addRow({
             dataHora: new Date().toLocaleString('pt-BR'),
             nome: dadosPiloto.name_do_piloto || '',
@@ -109,10 +107,11 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             dataPagamento: ''
         });
 
+        // 4. SALVA E FAZ O UPLOAD DA VERSÃO COMPLETA E ACUMULADA
         await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
         await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
-        
-        console.log(`Incrição do piloto ${dadosPiloto.name_do_piloto} salva na planilha com sucesso!`);
+
+        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} salva na planilha com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
     }
@@ -360,6 +359,12 @@ function gerarComprovante(dadosPiloto, pixData) {
 }
 
 async function getDadosPilotoByPixId(pixId) {
+
+    try {
+        await baixarArquivoDrive(NOME_ARQUIVO_EXCEL);
+    } catch (error) {
+        console.error('Erro ao baixar arquivo do Google Drive:', error.message);
+    }
     if (!fs.existsSync(NOME_ARQUIVO_EXCEL)) return null;
 
     const workbook = new ExcelJS.Workbook();

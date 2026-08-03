@@ -51,7 +51,23 @@ async function enviarArquivo(caminhoArquivo, nomeArquivo) {
     return fileId;
 
 }
+async function baixarArquivoDrive(fileId, caminhoDestinoLocal) {
+    const fileId = process.env.GOOGLE_DRIVE_FILE_ID;
+    if(!fileId) return;
 
+    const response = await drive.files.get(
+        {fileId: fileId, alt: "media"},
+        {responseType: "stream"}
+    );
+
+    return new Promise((resolve, reject) => {
+        const dest = fs.createWriteStream(caminhoDestinoLocal);
+        response.data
+            .on("end", () => resolve())
+            .on("error", (err) => reject(err))
+            .pipe(dest);
+    });
+}
 
 
 function getFileId() {
@@ -119,5 +135,6 @@ module.exports = {
     buscarArquivo,
     buscarBanner,
     buscarRegulamento,
-    baixarArquivo
+    baixarArquivo,
+    baixarArquivoDrive
 };
