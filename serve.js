@@ -10,6 +10,8 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 
 const {
+    sheets,
+    drive,
     enviarArquivo,
     buscarBanner,
     buscarRegulamento,
@@ -46,6 +48,8 @@ const transporter = nodemailer.createTransport({
 
 async function salvarnaPlanilha(dadosPiloto, pixData) {
     try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+
         const novaLinha = [
             new Date().toLocaleString('pt-BR'),
             dadosPiloto.name_do_piloto || '',
@@ -65,10 +69,17 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             ''
         ];
 
-        // Adiciona a linha de maneira thread-safe via Google Sheets API
-        await appendLinhaPlanilha(novaLinha);
+        // O append trata concorrência de forma nativa no lado do Google
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: "Inscrições!A:P",
+            valueInputOption: "USER_ENTERED",
+            requestBody: {
+                values: [novaLinha]
+            }
+        });
 
-        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} sincronizada com sucesso!`);
+        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} adicionada com sucesso!`);
     } catch (err) {
         console.error('Erro ao salvar na planilha:', err);
     }
@@ -241,31 +252,38 @@ app.get("/api/check-status/:pixId", async (req, res) => {
 
 async function atualizarStatusPlanilha(pixId, novoStatus) {
     try {
-        if (!fs.existsSync(NOME_ARQUIVO_EXCEL)) return;
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
-        const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
-        const worksheet = workbook.getWorksheet('Inscrições');
-
-        let alterado = false;
-        worksheet.eachRow((row, rowNumber) => {
-            if (rowNumber === 1) return;
-
-            if (row.getCell(14).value === pixId && row.getCell(15).value !== novoStatus) {
-                row.getCell(15).value = novoStatus;
-                row.getCell(16).value = new Date().toLocaleString('pt-BR');
-                alterado = true;
-            }
+        // 1. Busca os dados atuais da planilha
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "Inscrições!A:P",
         });
 
-        if (alterado) {
-            await workbook.xlsx.writeFile(NOME_ARQUIVO_EXCEL);
-            try {
-                await enviarArquivo(NOME_ARQUIVO_EXCEL, "inscricoes_pilotos.xlsx");
-            } catch (driveErr) {
-                console.error('Erro ao enviar arquivo para o Google Drive:', driveErr.message);
+        const rows = response.data.values;
+        if (!rows) return;
+
+        // 2. Localiza a linha correspondente ao Pix ID
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+
+            if (row[13] === pixId && row[14] !== novoStatus) {
+                const rowNum = i + 1; // Ajusta o número da linha na planilha (base 1)
+                const dataPagamento = new Date().toLocaleString('pt-BR');
+
+                // 3. Atualiza somente o Status (Coluna O) e a Data (Coluna P)
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `Inscrições!O${rowNum}:P${rowNum}`,
+                    valueInputOption: "USER_ENTERED",
+                    requestBody: {
+                        values: [[novoStatus, dataPagamento]]
+                    }
+                });
+
+                console.log(`Status do Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
+                break;
             }
-            console.log(`Status do pagamento para Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
         }
     } catch (err) {
         console.error('Erro ao atualizar status na planilha:', err);
@@ -316,40 +334,46 @@ function gerarComprovante(dadosPiloto, pixData) {
 }
 
 async function getDadosPilotoByPixId(pixId) {
+try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
-    if (!fs.existsSync(NOME_ARQUIVO_EXCEL)) return null;
+        // Lê todas as linhas diretamente do Google Sheets
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "Inscrições!A:P",
+        });
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(NOME_ARQUIVO_EXCEL);
-    const worksheet = workbook.getWorksheet('Inscrições');
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) return null;
 
-    let piloto = null;
-
-    if (worksheet) {
-
-        worksheet.eachRow((row, rowNumber) => {
-            if (rowNumber === 1) return;
-
-            if (row.getCell(14).value === pixId) {
-                piloto = {
-                    name_do_piloto: row.getCell(2).value,
-                    cpf_do_piloto: row.getCell(3).value,
-                    email: row.getCell(4).value,
-                    telefone: row.getCell(5).value,
-                    numero_da_cba: row.getCell(6).value,
-                    idade: row.getCell(7).value,
-                    nome_do_responsavel: row.getCell(8).value,
-                    cpf_do_responsavel: row.getCell(9).value,
-                    numero_do_piloto: row.getCell(10).value,
-                    categoria: row.getCell(11).value,
-                    tamanho_Camisa: row.getCell(12).value,
-                    amount: Number(row.getCell(13).value) * 100,
-                    status: row.getCell(15).value
+        // Percorre as linhas procurando o ID do Pix (Coluna N = índice 13)
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            
+            // Trata células vazias com fallback safe (|| '')
+            if (row[13] === pixId) {
+                return {
+                    name_do_piloto: row[1] || '',
+                    cpf_do_piloto: row[2] || '',
+                    email: row[3] || '',
+                    telefone: row[4] || '',
+                    numero_da_cba: row[5] || '',
+                    idade: row[6] || '',
+                    nome_do_responsavel: row[7] || 'N/A',
+                    cpf_do_responsavel: row[8] || 'N/A',
+                    numero_do_piloto: row[9] || '',
+                    categoria: row[10] || '',
+                    tamanho_Camisa: row[11] || '',
+                    amount: Number(row[12] || 0) * 100,
+                    status: row[14] || 'Pendente'
                 };
             }
-        });
+        }
+        return null;
+    } catch (err) {
+        console.error('Erro ao buscar piloto no Google Sheets:', err);
+        return null;
     }
-    return piloto;
 
 }
 

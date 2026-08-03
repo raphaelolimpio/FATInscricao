@@ -12,11 +12,17 @@ const auth = new google.auth.GoogleAuth({
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: privateKey,
     },
-    scopes: ["https://www.googleapis.com/auth/drive"]
+    scopes: ["https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/spreadsheets"
+    ]
 });
 
 const drive = google.drive({
     version: "v3",
+    auth
+});
+const sheets = google.sheets({
+    version: "v4",
     auth
 });
 
@@ -128,6 +134,8 @@ async function baixarArquivo(fileId, res) {
 }
 
 module.exports = {
+    sheets,
+    drive,
     enviarArquivo,
     buscarArquivo,
     buscarBanner,
