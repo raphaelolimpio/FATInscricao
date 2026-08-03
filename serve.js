@@ -141,10 +141,13 @@ app.post("/api/checkout", async (req, res) => {
         const dados = req.body;
         let valorPix;
 
-        if (dados.categoria === "M" || dados.categoria === "C") {
-            valorPix = 500;
-        } else {
-            valorPix = 600;
+        if (dados.categoria === "M" ) {
+            valorPix = 100;
+        } else if (dados.categoria === "C") {
+            valorPix = 200;
+        }
+        else {
+            valorPix = 1;
         }
 
         dados.amount = valorPix;
