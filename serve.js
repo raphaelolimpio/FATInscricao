@@ -122,7 +122,7 @@ app.get("/regulamento", async (req, res) => {
 app.post("/api/checkout", async (req, res) => {
     try {
         const dados = req.body;
-        const categoria = (dados.categoria || "").trim().toUpperCase();
+        const categoria = (dados.categoria || "").trim();
         const totalPagos = await contarInscritosPagosCCategoria(categoria);
         console.log(`CAtegoria  ${categoria} possui ${totalPagos} inscriçoes pagas`);
         let valorPix = 0;
