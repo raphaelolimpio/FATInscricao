@@ -130,16 +130,16 @@ app.post("/api/checkout", async (req, res) => {
 
         if (categoria === "Mirim" || categoria === "Cadete") {
             const LIMITE_LOTE_1 = 15;
-            if (totalPagos <= LIMITE_LOTE_1) {
+            if (totalPagos < LIMITE_LOTE_1) {
                 valorPix = 45000;
                 loteAplicado = 1;
             } else {
                 valorPix = 65000;
                 loteAplicado = 2;
             }
-        } else if (categoria === "Junior" || categoria === "Graduados" || categoria === "Sênior") {
+        } else if (categoria === "Junior" || categoria === "Graduados" || categoria === "Senior") {
             const LIMITE_LOTE_1 = 15;
-            if (totalPagos <= LIMITE_LOTE_1) {
+            if (totalPagos < LIMITE_LOTE_1) {
                 valorPix = 60000;
                 loteAplicado = 1;
             } else {
@@ -148,7 +148,7 @@ app.post("/api/checkout", async (req, res) => {
             }
         } else {
             const LIMITE_LOTE_1 = 43;
-            if (totalPagos <= LIMITE_LOTE_1) {
+            if (totalPagos < LIMITE_LOTE_1) {
                 valorPix = 60000;
                 loteAplicado = 1;
             } else {
