@@ -161,12 +161,28 @@ app.post("/api/checkout", async (req, res) => {
         dados.lote = loteAplicado;
 
         const cpfLimpo = (dados.cpf_do_piloto || "").replace(/\D/g, '');
+        const cpfRespLimpo = (dados.cpf_do_responsavel || "").replace(/\D/g, '');
+        const idadePiloto = Number(dados.idade || 0);
 
-        if (cpfLimpo.length !== 11) {
-            return res.status(400).json({
-                sucesso: false,
-                message: 'CPF do piloto inválido (deve conter 11 dígitos).'
-            });
+        const ehMenordeIdade = idadePiloto < 18 || ["Cadete", "Mirim"].includes(categoria);
+
+        let cpfParaCobranca = cpfLimpo;
+        let nomeParaCobranca = dados.name_do_piloto;
+
+        if (ehMenordeIdade) {
+            if (cpfRespLimpo.length !== 11) {
+                return res.status(400).json({
+                    sucesso: false,
+                    message: 'CPF do responsável inválido (deve conter 11 dígitos) para pilotos menores de idade.'
+                });
+            } else {
+                if (cpfLimpo.length !== 11) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        message: 'CPF do piloto inválido (deve conter 11 dígitos).'
+                    });
+                }
+            }
         }
 
         const clienteResponse = await axios.post(
@@ -175,7 +191,7 @@ app.post("/api/checkout", async (req, res) => {
                 name: dados.name_do_piloto,
                 email: dados.email,
                 cellphone: dados.telefone ? dados.telefone.replace(/\D/g, '') : '',
-                taxId: cpfLimpo,
+                taxId: cpfParaCobranca,
             },
             {
                 headers: {
