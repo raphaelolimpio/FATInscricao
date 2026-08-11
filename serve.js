@@ -66,13 +66,14 @@ async function salvarnaPlanilha(dadosPiloto, pixData) {
             (dadosPiloto.amount / 100),
             pixData.id || '',
             pixData.status || 'Pendente',
-            ''
+            '',
+            dadosPiloto.lote || 1
         ];
 
         // O append trata concorrência de forma nativa no lado do Google
         await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: "Inscrições!A:P",
+            range: "Inscrições!A:Q",
             valueInputOption: "USER_ENTERED",
             requestBody: {
                 values: [novaLinha]
@@ -121,18 +122,43 @@ app.get("/regulamento", async (req, res) => {
 app.post("/api/checkout", async (req, res) => {
     try {
         const dados = req.body;
-        let valorPix;
+        const categoria = (dados.categoria || "").trim().toUpperCase();
+        const totalPagos = await contarInscritosPagosCCategoria(categoria);
+        console.log(`CAtegoria  ${categoria} possui ${totalPagos} inscriçoes pagas`);
+        let valorPix = 0;
+        let loteAplicado = 1;
 
-        if (dados.categoria === "M") {
-            valorPix = 100;
-        } else if (dados.categoria === "C") {
-            valorPix = 200;
-        }
-        else {
-            valorPix = 100;
+        if (categoria === "Mirim" || categoria === "Cadete") {
+            const LIMITE_LOTE_1 = 15;
+            if (totalPagos <= LIMITE_LOTE_1) {
+                valorPix = 40000;
+                loteAplicado = 1;
+            } else {
+                valorPix = 65000;
+                loteAplicado = 2;
+            }
+        } else if (categoria === "Junior" || categoria === "Graduados" || categoria === "Sênior") {
+            const LIMITE_LOTE_1 = 15;
+            if (totalPagos <= LIMITE_LOTE_1) {
+                valorPix = 60000;
+                loteAplicado = 1;
+            } else {
+                valorPix = 160000;
+                loteAplicado = 2;
+            }
+        } else {
+            const LIMITE_LOTE_1 = 43;
+            if (totalPagos <= LIMITE_LOTE_1) {
+                valorPix = 60000;
+                loteAplicado = 1;
+            } else {
+                valorPix = 95000;
+                loteAplicado = 2;
+            }
         }
 
         dados.amount = valorPix;
+        dados.lote = loteAplicado;
 
         const cpfLimpo = (dados.cpf_do_piloto || "").replace(/\D/g, '');
 
@@ -191,6 +217,7 @@ app.post("/api/checkout", async (req, res) => {
         return res.status(200).json({
             sucesso: true,
             message: 'Cobrança processada com sucesso',
+            lote: loteAplicado,
             pixId: pixData.id,
             brCode: pixData.brCode,
             brCodeBase64: pixData.brCodeBase64
@@ -257,6 +284,34 @@ app.get("/api/check-status/:pixId", async (req, res) => {
         });
     }
 });
+
+async function contarInscritosPagosCCategoria(categoria){
+    try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "Inscrições!A:P",
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length <= 1) return 0;
+
+        let totalPagos = 0;
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const catRow = row[10] || '';
+            const statusRow = row[14] || '';
+            if (catRow.trim().toUpperCase() === categoria.trim().toUpperCase() && statusRow.trim() === 'Pago') {
+                totalPagos++;
+            }
+        }
+        return totalPagos;
+    } catch (err) {
+        console.error('Erro ao contar inscritos pagos:', err);
+        return 0;
+    }
+}
 
 
 async function atualizarStatusPlanilha(pixId, novoStatus) {
