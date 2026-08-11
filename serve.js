@@ -131,7 +131,7 @@ app.post("/api/checkout", async (req, res) => {
         if (categoria === "Mirim" || categoria === "Cadete") {
             const LIMITE_LOTE_1 = 15;
             if (totalPagos <= LIMITE_LOTE_1) {
-                valorPix = 40000;
+                valorPix = 45000;
                 loteAplicado = 1;
             } else {
                 valorPix = 65000;
