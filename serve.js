@@ -40,13 +40,19 @@ const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    port: 465,
+    port: 587,
     secure: true,
     family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    }
+    },
+    tls: {
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000
 });
 
 app.post("/api/webhook/abacatepay", async (req, res) => {
