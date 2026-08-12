@@ -149,7 +149,7 @@ function iniciarVerificacaoPagamento(pixId) {
             const data = await res.json();
             if (data.status === 'PAID') {
                 clearInterval(statusInterval);
-                exibirSucessoPagamento();
+                exibirSucessoPagamento(pixId);
             }
         } catch (err) {
             console.error('Erro ao verificar status do pagamento:', err);
@@ -157,7 +157,7 @@ function iniciarVerificacaoPagamento(pixId) {
     }, 3000);
 }
 
-function exibirSucessoPagamento() {
+function exibirSucessoPagamento(pixId) {
     document.getElementById('pix-qr-image').style.display = 'none';
     document.getElementById('pix-copia-cola').style.display = 'none';
     document.getElementById('btn-copy-pix').style.display = 'none';
@@ -166,11 +166,25 @@ function exibirSucessoPagamento() {
     pixContainer.innerHTML = `
         <div style="text-align: center; margin-top: 20px;">
             <div style="font-size: 3rem; color: #10B981;">✓</div>
-            <h2 style="color: #10B981;; maring-top: 10px;">Pagamento Confirmado!</h2>
-            <p style ="color: #4B5563; margin-top: 5px;">Sua inscrição foi realizada com sucesso.</p>
+            <h2 style="color: #10B981; margin-top: 10px;">Pagamento Confirmado!</h2>
+            <p style="color: #4B5563; margin-top: 5px; margin-bottom: 20px;">Sua inscrição foi realizada com sucesso.</p>
+            
+            <a href="/api/download-comprovante/${pixId}" target="_blank" style="
+                background-color: #10B981;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                font-size: 16px;
+                border-radius: 6px;
+                display: inline-block;
+                font-weight: bold;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            ">
+                📄 Baixar Comprovante (PDF)
+            </a>
         </div>
     `;
-    btnSubmitPayment.innerText = "Incrição Conluida";
+    btnSubmitPayment.innerText = "Inscrição Concluída";
     btnSubmitPayment.style.backgroundColor = "#10B981";
 }
 
