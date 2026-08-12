@@ -74,7 +74,7 @@ function copyPixCode() {
 }
 
 async function processPayment() {
-    // Validação extra para menor de idade antes de chamar a API
+
     const idade = parseInt(idadeInput.value) || 0;
     if (idade < 18) {
         const responsavel = respInput.value.trim();
@@ -131,6 +131,27 @@ async function processPayment() {
         document.getElementById('btn-copy-pix').style.display = 'inline-block';
         btnSubmitPayment.innerText = "Aguardando Pagamento...";
 
+        const pixContainer = document.getElementById('pix-details');
+        let avisoAguardando = document.getElementById('aviso-aguardando-pagamento');
+
+        if (!avisoAguardando) {
+            avisoAguardando = document.createElement('div');
+            avisoAguardando.id = 'aviso-aguardando-pagamento';
+            avisoAguardando.style.cssText = `
+            margin-top: 15px;
+                padding: 12px;
+                background-color: #FEF3C7;
+                border: 1px solid #F59E0B;
+                border-radius: 8px;
+                color: #92400E;
+                font-size: 0.9rem;
+                font-weight: 600;
+                text-align: center;
+            `;
+            avisoAguardando.innerHTML = `<strong> Aguardando confirmação do pagamento via Pix...</strong>`;
+            pixContainer.appendChild(avisoAguardando);
+        }
+
         iniciarVerificacaoPagamento(data.pixId);
 
     } catch (err) {
@@ -164,23 +185,32 @@ function exibirSucessoPagamento(pixId) {
 
     const pixContainer = document.getElementById('pix-details');
     pixContainer.innerHTML = `
-        <div style="text-align: center; margin-top: 20px;">
-            <div style="font-size: 3rem; color: #10B981;">✓</div>
-            <h2 style="color: #10B981; margin-top: 10px;">Pagamento Confirmado!</h2>
-            <p style="color: #4B5563; margin-top: 5px; margin-bottom: 20px;">Sua inscrição foi realizada com sucesso.</p>
+        <div style="text-align: center; padding: 25px 15px; background: #F0FDF4; border: 1px solid #10B981; border-radius: 12px; margin-top: 15px;">
+            <div style="font-size: 3.5rem; color: #10B981; line-height: 1;">✓</div>
+            <h2 style="color: #065F46; margin-top: 10px; font-size: 1.5rem;">Pagamento Confirmado!</h2>
+            <p style="color: #047857; margin-top: 6px; margin-bottom: 20px; font-size: 0.95rem;">Sua inscrição foi confirmada no sistema.</p>
             
-            <a href="/api/download-comprovante/${pixId}" target="_blank" style="
+            <a href="/api/download-comprovante/${pixId}" target="_blank" id="btn-download-pdf" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
                 background-color: #10B981;
-                color: white;
-                padding: 12px 24px;
+                color: #FFFFFF;
+                padding: 14px 28px;
                 text-decoration: none;
-                font-size: 16px;
-                border-radius: 6px;
-                display: inline-block;
-                font-weight: bold;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            ">
-                📄 Baixar Comprovante (PDF)
+                font-size: 1rem;
+                border-radius: 8px;
+                font-weight: 700;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+                transition: all 0.2s ease-in-out;
+            " onmouseover="this.style.backgroundColor='#059669'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#10B981'; this.style.transform='translateY(0)';">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Baixar Comprovante de Inscrição (PDF)
             </a>
         </div>
     `;
