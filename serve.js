@@ -58,7 +58,7 @@ app.post("/api/webhook/abacatepay", async (req, res) => {
         console.log("PayLoad: ", JSON.stringify(evento, null, 2));
 
         const tipoEvento = evento?.event || evento?.type;
-        const pixId = evento?.data?.id || evento?.data?.pix?.id || evento?.data?.chargeId;
+        const pixId = evento?.data?.pixQrCode?.id || evento?.data?.id || evento?.data?.pix?.id;
 
         if (tipoEvento === 'billing.paid' || tipoEvento === 'trasparent.completed') {
             console.log(`pagamento confirmado Pix ID: ${pixId}`);
