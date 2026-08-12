@@ -396,27 +396,53 @@ function gerarComprovante(dadosPiloto, pixData) {
         const caminho = path.join(__dirname, 'comprovantes', nomeArquivo);
 
         const doc = new PDFDocument({
-            margin: 40
+            size: [595, 420],
+            margin: 30
         });
 
         const stream = fs.createWriteStream(caminho);
-
         doc.pipe(stream);
-        doc.fontSize(20).text('Comprovante de Inscrição', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12);
+
+        const caminhoLogo = path.join(__dirname, 'logo.png');
+        if (fs.existsSync(caminhoLogo)) {
+            doc.save();
+            doc.opacity(0.12);
+            doc.image(caminhoLogo, (595 - 320) / 2, (420 - 180) / 2, { width: 320 });
+            doc.restore();
+        }
+
+        doc.fillColor('#000000')
+            .fontSize(18)
+            .font('Helvetica-Bold')
+            .text('Comprovante de Inscrição', { align: 'center' });
+        doc.moveDown(1.2);
+
+        doc.font('Helvetica').fontSize(11);
+
+        const dataApenas = new Date().toLocaleDateString('pt-BR');
+        const valorFormatado = (dadosPiloto.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })   ;
+
+
         doc.text(`Nome do Piloto: ${dadosPiloto.name_do_piloto}`);
         doc.text(`CPF do Piloto: ${dadosPiloto.cpf_do_piloto}`);
         doc.text(`Categoria: ${dadosPiloto.categoria}`);
         doc.text(`Tamanho da camisa: ${dadosPiloto.tamanho_Camisa}`);
         doc.text(`E-mail: ${dadosPiloto.email}`);
         doc.text(`Telefone: ${dadosPiloto.telefone}`);
-        doc.moveDown();
-        doc.text(`valor: R$ ${(dadosPiloto.amount / 100).toFixed(2)}`);
+
+        doc.moveDown(0.8);
+
+        doc.font('Helvetica-Bold');
+        doc.text(`Valor Pago: ${valorFormatado}`);
         doc.text(`Status: PAGO`);
-        doc.text(`Data/Hora do Pagamento: ${new Date().toLocaleString('pt-BR')}`);
-        doc.moveDown();
-        doc.fontSize(15).text('Obrigado por se inscrever!', { align: 'center' });
+        doc.text(`Data do Pagamento: ${dataApenas}`);
+
+        doc.moveDown(1.5);
+
+        doc.font('Helvetica')
+            .fontSize(13)
+            .fillColor('#10B981')
+            .text('Obrigado por se inscrever! Boa sorte na competição!', { align: 'center' });
         doc.end();
 
         stream.on('finish', () => {
