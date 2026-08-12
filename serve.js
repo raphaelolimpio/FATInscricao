@@ -46,45 +46,41 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-async function salvarnaPlanilha(dadosPiloto, pixData) {
+app.post("/api/webhook/abacatepay", async (req, res) => {
     try {
-        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+        const evento = req.body;
 
-        const novaLinha = [
-            new Date().toLocaleString('pt-BR'),
-            dadosPiloto.name_do_piloto || '',
-            dadosPiloto.cpf_do_piloto || '',
-            dadosPiloto.email || '',
-            dadosPiloto.telefone || '',
-            dadosPiloto.numero_da_cba || '',
-            dadosPiloto.idade || '',
-            dadosPiloto.nome_do_responsavel || 'N/A',
-            dadosPiloto.cpf_do_responsavel || 'N/A',
-            dadosPiloto.numero_do_piloto || '',
-            dadosPiloto.categoria || '',
-            dadosPiloto.tamanho_Camisa || '',
-            (dadosPiloto.amount / 100),
-            pixData.id || '',
-            pixData.status || 'Pendente',
-            '',
-            dadosPiloto.lote || 1
-        ];
+        if (evento && evento.type === 'billing.paid') {
+            const pixId = evento.data.id;
+            console.log(`Webhook recebido para Pix ID: ${pixId}, status: ${evento.data.status}`);
 
-        // O append trata concorrência de forma nativa no lado do Google
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: "Inscrições!A:Q",
-            valueInputOption: "USER_ENTERED",
-            requestBody: {
-                values: [novaLinha]
+            const foiAtualizado = await atualizarStatusPlanilha(pixId, 'Pago');
+
+            if (foiAtualizado) {
+                const dadosPiloto = await getDadosPilotoByPixId(pixId);
+                if (dadosPiloto && dadosPiloto.email) {
+                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
+
+                    try {
+                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
+                    } catch (emailErr) {
+                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
+                    } finally {
+                        if (fs.existsSync(caminhoPDF)) {
+                            fs.unlinkSync(caminhoPDF);
+                        }
+                    }
+                }
             }
-        });
-
-        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} adicionada com sucesso!`);
+        }
+        return res.status(200).json({ sucesso: true });
     } catch (err) {
-        console.error('Erro ao salvar na planilha:', err);
+        console.error('Erro ao processar webhook:', err);
+        return res.status(500).send('Erro ao processar webhook');
     }
-}
+});
+
+
 
 app.get("/banner", async (req, res) => {
     const banner = await buscarBanner();
@@ -131,7 +127,7 @@ app.post("/api/checkout", async (req, res) => {
         if (categoria === "Mirim" || categoria === "Cadete") {
             const LIMITE_LOTE_1 = 15;
             if (totalPagos < LIMITE_LOTE_1) {
-                valorPix = 45000;
+                valorPix = 100;
                 loteAplicado = 1;
             } else {
                 valorPix = 65000;
@@ -275,16 +271,16 @@ app.get("/api/check-status/:pixId", async (req, res) => {
         if (status === 'PAID') {
             const atualizado = await atualizarStatusPlanilha(pixId, 'Pago');
 
-            if(atualizado) {
+            if (atualizado) {
                 const pdf = await gerarComprovante(dadosPiloto, {
                     id: pixId,
                 });
-                try{
+                try {
                     await enviarComprovanteEmail(dadosPiloto, pdf);
                 } catch (emailErr) {
                     console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
                 } finally {
-                    if(fs.existsSync(pdf)) {
+                    if (fs.existsSync(pdf)) {
                         fs.unlinkSync(pdf);
                     }
                 }
@@ -301,7 +297,7 @@ app.get("/api/check-status/:pixId", async (req, res) => {
     }
 });
 
-async function contarInscritosPagosCCategoria(categoria){
+async function contarInscritosPagosCCategoria(categoria) {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
@@ -329,12 +325,50 @@ async function contarInscritosPagosCCategoria(categoria){
     }
 }
 
+async function salvarnaPlanilha(dadosPiloto, pixData) {
+    try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+
+        const novaLinha = [
+            new Date().toLocaleString('pt-BR'),
+            dadosPiloto.name_do_piloto || '',
+            dadosPiloto.cpf_do_piloto || '',
+            dadosPiloto.email || '',
+            dadosPiloto.telefone || '',
+            dadosPiloto.numero_da_cba || '',
+            dadosPiloto.idade || '',
+            dadosPiloto.nome_do_responsavel || 'N/A',
+            dadosPiloto.cpf_do_responsavel || 'N/A',
+            dadosPiloto.numero_do_piloto || '',
+            dadosPiloto.categoria || '',
+            dadosPiloto.tamanho_Camisa || '',
+            (dadosPiloto.amount / 100),
+            pixData.id || '',
+            pixData.status || 'Pendente',
+            '',
+            dadosPiloto.lote || 1
+        ];
+
+        // O append trata concorrência de forma nativa no lado do Google
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: "Inscrições!A:Q",
+            valueInputOption: "USER_ENTERED",
+            requestBody: {
+                values: [novaLinha]
+            }
+        });
+
+        console.log(`Inscrição do piloto ${dadosPiloto.name_do_piloto} adicionada com sucesso!`);
+    } catch (err) {
+        console.error('Erro ao salvar na planilha:', err);
+    }
+}
 
 async function atualizarStatusPlanilha(pixId, novoStatus) {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
-        // 1. Busca os dados atuais da planilha
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
             range: "Inscrições!A:P",
@@ -411,7 +445,7 @@ function gerarComprovante(dadosPiloto, pixData) {
 }
 
 async function getDadosPilotoByPixId(pixId) {
-try {
+    try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
         // Lê todas as linhas diretamente do Google Sheets
@@ -426,7 +460,7 @@ try {
         // Percorre as linhas procurando o ID do Pix (Coluna N = índice 13)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            
+
             // Trata células vazias com fallback safe (|| '')
             if (row[13] === pixId) {
                 return {
