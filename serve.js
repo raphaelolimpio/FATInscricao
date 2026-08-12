@@ -40,44 +40,42 @@ const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    port: 587,
-    secure: true,
-    family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000
-});
-
-app.post("/api/webhook/abacatepay", async (req, res) => {
-    try {
-        if (process.env.WEBHOOK_SECRET && req.query.webhookSecret !== process.env.WEBHOOK_SECRET) {
-            console.warn(" Webhook rejeitado: Secret inválido!");
-            return res.status(401).json({ error: "Secret inválido" });
-        }
-
-        const evento = req.body;
-        const tipoEvento = evento?.event || evento?.type;
-        const pixId = evento?.data?.pixQrCode?.id || evento?.data?.id || evento?.data?.pix?.id;
-
-        if (tipoEvento === 'billing.paid' || tipoEvento === 'transparent.completed') {
-            if (pixId) {
-                await atualizarStatusPlanilha(pixId, 'Pago');
-            }
-        }
-
-        return res.status(200).json({ sucesso: true });
-    } catch (err) {
-        console.error(" Erro no Webhook:", err);
-        return res.status(500).send("Erro interno no Webhook");
     }
 });
+
+app.get("/api/download-comprovante/:pixId", async (req, res) => {
+    try {
+        const { pixId } = req.params;
+
+        const dadosPiloto = await getDadosPilotoByPixId(pixId);
+
+        if (!dadosPiloto) {
+            return res.status(404).send("Inscrição/Piloto não encontrado.");
+        }
+
+        const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Comprovante_Inscricao_${pixId}.pdf"`);
+
+        res.sendFile(caminhoPDF, (err) => {
+            if (fs.existsSync(caminhoPDF)) {
+                fs.unlinkSync(caminhoPDF); 
+            }
+            if (err) {
+                console.error("Erro ao enviar PDF para download:", err);
+            }
+        });
+
+    } catch (err) {
+        console.error("Erro ao gerar comprovante para download:", err);
+        return res.status(500).send("Erro ao gerar o comprovante.");
+    }
+});
+
 
 
 app.get("/banner", async (req, res) => {
@@ -267,26 +265,8 @@ app.get("/api/check-status/:pixId", async (req, res) => {
 
 
         if (status === 'PAID') {
-            const atualizado = await atualizarStatusPlanilha(pixId, 'Pago');
+            await atualizarStatusPlanilha(pixId, 'Pago');
 
-            if (atualizado) {
-                const pdf = await gerarComprovante(dadosPiloto, {
-                    id: pixId,
-                });
-
-                if (dadosPiloto && dadosPiloto.email) {
-                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
-                    try {
-                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
-                    } catch (emailErr) {
-                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
-                    } finally {
-                        if (fs.existsSync(caminhoPDF)) {
-                            fs.unlinkSync(caminhoPDF);
-                        }
-                    }
-                }
-            }
         }
         return res.status(200).json({
             sucesso: true,
@@ -396,35 +376,6 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
                 });
 
                 console.log(`Status do Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
-                const dadosPiloto = {
-                    name_do_piloto: row[1] || '',
-                    cpf_do_piloto: row[2] || '',
-                    email: row[3] || '',
-                    telefone: row[4] || '',
-                    numero_da_cba: row[5] || '',
-                    idade: row[6] || '',
-                    nome_do_responsavel: row[7] || 'N/A',
-                    cpf_do_responsavel: row[8] || 'N/A',
-                    numero_do_piloto: row[9] || '',
-                    categoria: row[10] || '',
-                    tamanho_Camisa: row[11] || '',
-                    amount: Number(row[12] || 0) * 100,
-                    status: novoStatus
-                };
-
-                if (dadosPiloto.email){
-                    console.log(`Gerando comprovante de pagamento para ${dadosPiloto.email}...`);
-                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
-                    try {
-                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
-                    } catch (emailErr) {
-                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
-                    } finally {
-                        if (fs.existsSync(caminhoPDF)) {
-                            fs.unlinkSync(caminhoPDF);
-                        }
-                    }
-                }
                 return true;
             }
         }

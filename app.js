@@ -173,3 +173,37 @@ function exibirSucessoPagamento() {
     btnSubmitPayment.innerText = "Incrição Conluida";
     btnSubmitPayment.style.backgroundColor = "#10B981";
 }
+
+
+async function checarStatusPagamento(pixId) {
+    const response = await fetch(`/api/check-status/${pixId}`);
+    const data = await response.json();
+
+    if (data.status === 'PAID') {
+        document.getElementById('area-pix').style.display = 'none';
+
+        const containerSucesso = document.getElementById('area-sucesso');
+        containerSucesso.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h2 style="color: #28a745;">Pagamento Confirmado! 🎉</h2>
+                <p>Sua inscrição foi realizada e confirmada com sucesso.</p>
+                <br>
+                <a href="/api/download-comprovante/${pixId}" target="_blank" class="btn-download" style="
+                    background-color: #28a745;
+                    color: white;
+                    padding: 12px 24px;
+                    text-decoration: none;
+                    font-size: 16px;
+                    border-radius: 5px;
+                    display: inline-block;
+                    font-weight: bold;
+                ">
+                    📄 Baixar Comprovante de Inscrição (PDF)
+                </a>
+            </div>
+        `;
+        containerSucesso.style.display = 'block';
+
+        clearInterval(intervaloCheck);
+    }
+}
