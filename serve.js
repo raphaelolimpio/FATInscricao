@@ -49,16 +49,19 @@ const transporter = nodemailer.createTransport({
 app.post("/api/webhook/abacatepay", async (req, res) => {
     try {
 
-        const secretRecebido = req.headers['x-secret'] || req.headers['secret'];
-        if (process.env.WEBHOOK_SECRET && secretRecebido !== process.env.WEBHOOK_SECRET) {
-            console.warn("Requisição com secret inválido");
-            return res.status(401).json({ error: "Não autorizado: secret inválido" });
+        if (req.query.webhookSecret !== process.env.WEBHOOK_SECRET) {
+            console.warn(" Requisição rejeitada: Secret inválido ou ausente!");
+            return res.status(401).json({ error: "Unauthorized" });
         }
         const evento = req.body;
+        console.log("Webhook recebido:");
+        console.log("PayLoad: ", JSON.stringify(evento, null, 2));
 
-        if (evento && evento.type === 'billing.paid') {
-            const pixId = evento.data.id;
-            console.log(`Webhook recebido para Pix ID: ${pixId}, status: ${evento.data.status}`);
+        const tipoEvento = evento?.event || evento?.type;
+        const pixId = evento?.data?.id || evento?.data?.pix?.id || evento?.data?.chargeId;
+
+        if (tipoEvento === 'billing.paid' || tipoEvento === 'trasparent.completed') {
+            console.log(`pagamento confirmado Pix ID: ${pixId}`);
 
             const foiAtualizado = await atualizarStatusPlanilha(pixId, 'Pago');
 
@@ -77,6 +80,8 @@ app.post("/api/webhook/abacatepay", async (req, res) => {
                         }
                     }
                 }
+            } else {
+                console.log("Pagamento ja processado");
             }
         }
         return res.status(200).json({ sucesso: true });
