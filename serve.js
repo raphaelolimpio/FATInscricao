@@ -48,6 +48,12 @@ const transporter = nodemailer.createTransport({
 
 app.post("/api/webhook/abacatepay", async (req, res) => {
     try {
+
+        const secretRecebido = req.headers['x-secret'] || req.headers['secret'];
+        if (process.env.WEBHOOK_SECRET && secretRecebido !== process.env.WEBHOOK_SECRET) {
+            console.warn("Requisição com secret inválido");
+            return res.status(401).json({ error: "Não autorizado: secret inválido" });
+        }
         const evento = req.body;
 
         if (evento && evento.type === 'billing.paid') {
@@ -275,13 +281,17 @@ app.get("/api/check-status/:pixId", async (req, res) => {
                 const pdf = await gerarComprovante(dadosPiloto, {
                     id: pixId,
                 });
-                try {
-                    await enviarComprovanteEmail(dadosPiloto, pdf);
-                } catch (emailErr) {
-                    console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
-                } finally {
-                    if (fs.existsSync(pdf)) {
-                        fs.unlinkSync(pdf);
+
+                if (dadosPiloto && dadosPiloto.email) {
+                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
+                    try {
+                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
+                    } catch (emailErr) {
+                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
+                    } finally {
+                        if (fs.existsSync(caminhoPDF)) {
+                            fs.unlinkSync(caminhoPDF);
+                        }
                     }
                 }
             }
