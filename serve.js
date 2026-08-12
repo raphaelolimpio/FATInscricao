@@ -51,49 +51,27 @@ const transporter = nodemailer.createTransport({
 
 app.post("/api/webhook/abacatepay", async (req, res) => {
     try {
-
-        if (req.query.webhookSecret !== process.env.WEBHOOK_SECRET) {
-            console.warn(" Requisição rejeitada: Secret inválido ou ausente!");
-            return res.status(401).json({ error: "Unauthorized" });
+        if (process.env.WEBHOOK_SECRET && req.query.webhookSecret !== process.env.WEBHOOK_SECRET) {
+            console.warn(" Webhook rejeitado: Secret inválido!");
+            return res.status(401).json({ error: "Secret inválido" });
         }
-        const evento = req.body;
-        console.log("Webhook recebido:");
-        console.log("PayLoad: ", JSON.stringify(evento, null, 2));
 
+        const evento = req.body;
         const tipoEvento = evento?.event || evento?.type;
         const pixId = evento?.data?.pixQrCode?.id || evento?.data?.id || evento?.data?.pix?.id;
 
-        if (tipoEvento === 'billing.paid' || tipoEvento === 'trasparent.completed') {
-            console.log(`pagamento confirmado Pix ID: ${pixId}`);
-
-            const foiAtualizado = await atualizarStatusPlanilha(pixId, 'Pago');
-
-            if (foiAtualizado) {
-                const dadosPiloto = await getDadosPilotoByPixId(pixId);
-                if (dadosPiloto && dadosPiloto.email) {
-                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
-
-                    try {
-                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
-                    } catch (emailErr) {
-                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
-                    } finally {
-                        if (fs.existsSync(caminhoPDF)) {
-                            fs.unlinkSync(caminhoPDF);
-                        }
-                    }
-                }
-            } else {
-                console.log("Pagamento ja processado");
+        if (tipoEvento === 'billing.paid' || tipoEvento === 'transparent.completed') {
+            if (pixId) {
+                await atualizarStatusPlanilha(pixId, 'Pago');
             }
         }
+
         return res.status(200).json({ sucesso: true });
     } catch (err) {
-        console.error('Erro ao processar webhook:', err);
-        return res.status(500).send('Erro ao processar webhook');
+        console.error(" Erro no Webhook:", err);
+        return res.status(500).send("Erro interno no Webhook");
     }
 });
-
 
 
 app.get("/banner", async (req, res) => {
@@ -412,6 +390,35 @@ async function atualizarStatusPlanilha(pixId, novoStatus) {
                 });
 
                 console.log(`Status do Pix ID ${pixId} atualizado para "${novoStatus}" na planilha.`);
+                const dadosPiloto = {
+                    name_do_piloto: row[1] || '',
+                    cpf_do_piloto: row[2] || '',
+                    email: row[3] || '',
+                    telefone: row[4] || '',
+                    numero_da_cba: row[5] || '',
+                    idade: row[6] || '',
+                    nome_do_responsavel: row[7] || 'N/A',
+                    cpf_do_responsavel: row[8] || 'N/A',
+                    numero_do_piloto: row[9] || '',
+                    categoria: row[10] || '',
+                    tamanho_Camisa: row[11] || '',
+                    amount: Number(row[12] || 0) * 100,
+                    status: novoStatus
+                };
+
+                if (dadosPiloto.email){
+                    console.log(`Gerando comprovante de pagamento para ${dadosPiloto.email}...`);
+                    const caminhoPDF = await gerarComprovante(dadosPiloto, { id: pixId });
+                    try {
+                        await enviarComprovanteEmail(dadosPiloto, caminhoPDF);
+                    } catch (emailErr) {
+                        console.error('Erro ao enviar comprovante por e-mail:', emailErr.message);
+                    } finally {
+                        if (fs.existsSync(caminhoPDF)) {
+                            fs.unlinkSync(caminhoPDF);
+                        }
+                    }
+                }
                 return true;
             }
         }
