@@ -430,7 +430,6 @@ async function getDadosPilotoByPixId(pixId) {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
 
-        // Lê todas as linhas diretamente do Google Sheets
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
             range: "Inscrições!A:P",
@@ -439,11 +438,8 @@ async function getDadosPilotoByPixId(pixId) {
         const rows = response.data.values;
         if (!rows || rows.length === 0) return null;
 
-        // Percorre as linhas procurando o ID do Pix (Coluna N = índice 13)
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-
-            // Trata células vazias com fallback safe (|| '')
             if (row[13] === pixId) {
                 return {
                     name_do_piloto: row[1] || '',
