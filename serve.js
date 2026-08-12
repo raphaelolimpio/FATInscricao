@@ -40,6 +40,9 @@ const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    port: 465,
+    secure: true,
+    family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
