@@ -52,48 +52,60 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Inscrições!A:Q",
+            range: "'Inscrições'!A:Q",
         });
+
         const rows = response.data.values;
-        if (!rows || rows.length <= 1){
-            return res.status(200).json({message: "Nenhuma linha encontrada na planilha"});
+        if (!rows || rows.length <= 1) {
+            return res.status(200).json({ message: "Nenhuma linha encontrada na planilha." });
         }
+
         const atualizados = [];
         const erros = [];
-        for (let i = 1; i < rows.length; i++){
-            const row = row[i];
-            const pixId = row[13]?.trim();
-            const statusAtual = row[14]?.trim();
-            const emailPiloto = row[3]?.trim();
-            const nomePiloto = row[1].trim();
+
+        // Começa em i = 1 para pular o cabeçalho
+        for (let i = 1; i < rows.length; i++) {
+            const linhaAtual = rows[i];
+            
+            // Coluna N (Índice 13) = ID Pix, Coluna O (Índice 14) = Status
+            const pixId = linhaAtual[13] ? String(linhaAtual[13]).trim() : '';
+            const statusAtual = linhaAtual[14] ? String(linhaAtual[14]).trim() : '';
+            const emailPiloto = linhaAtual[3] ? String(linhaAtual[3]).trim() : '';
+            const nomePiloto = linhaAtual[1] ? String(linhaAtual[1]).trim() : '';
 
             if (pixId && statusAtual !== "Pago") {
                 try {
-                    console.log(`[Sicronização] Verificando Pix ${pixId} (${nomePiloto})...`);
+                    console.log(`[Sincronização] Consultando Pix ${pixId} (${nomePiloto})...`);
 
-                    const checkResp = await axios.get("https://api.abacatepay.com/v1/pixQrCode/check",{
-                        params: { id: pixId },
-                        headers: {
-                            Authorization: `Bearer ${API_KEY}`,
-                            "Content-Type": "application/json"
+                    const checkResp = await axios.get(
+                        "https://api.abacatepay.com/v2/transparents/check",
+                        {
+                            params: { id: pixId },
+                            headers: {
+                                Authorization: `Bearer ${AUTORIZATION_API_KEY || API_KEY}`,
+                                "Content-Type": "application/json"
+                            }
                         }
-                    });
-                    const statusGateway = checkResp.data.data?.status;
+                    );
+
+                    const statusGateway = checkResp.data?.data?.status;
+
                     if (statusGateway === "PAID" || statusGateway === "COMPLETED") {
-                        console.log(`[Sicronização] Pix ${pixId} foi PAGO! atualizando panilha... `);
+                        console.log(`[Sincronização] Pix ${pixId} PAGO! Atualizando planilha...`);
 
                         await atualizarStatusPlanilha(pixId, "Pago");
+
                         const dadosPiloto = await getDadosPilotoByPixId(pixId);
                         if (dadosPiloto && dadosPiloto.email) {
                             try {
                                 const pdfPath = await gerarComprovante(dadosPiloto, { id: pixId });
                                 await enviarComprovanteEmail(dadosPiloto, pdfPath);
-                                console.log(`[Sicronizando] E-mail enviado com sucesso para ${dadosPiloto.email}`);
-
+                                console.log(`[Sincronização] Comprovante enviado para ${dadosPiloto.email}`);
                             } catch (mailErr) {
-                                console.error(`[Sicronização] Erro ao enviar e-mail para ${dadosPiloto.email}`);
+                                console.error(`[Sincronização] Erro ao enviar e-mail:`, mailErr.message);
                             }
                         }
+
                         atualizados.push({
                             nome: nomePiloto,
                             email: emailPiloto,
@@ -101,26 +113,26 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
                             statusAnterior: statusAtual,
                             novoStatus: "Pago"
                         });
-                    } else {
-                        console.log(`[Sicronização] Pix ${pixId} ainda continua ${statusGateway}.`);
                     }
                 } catch (checkErr) {
-                    console.error(`[Sicronização] Erro ao consultar Pix ${pixId}: `, checkErr.resolve?.data || checkErr.message);
-                    erros.push({ pixId, erro: checkErr.message });
+                    console.error(`[Sincronização] Erro no Pix ${pixId}:`, checkErr.response?.data || checkErr.message);
+                    erros.push({ pixId, erro: checkErr.response?.data || checkErr.message });
                 }
             }
         }
+
         return res.status(200).json({
             sucesso: true,
             totalAtualizados: atualizados.length,
             pilotosAtualizados: atualizados,
             erros: erros
         });
+
     } catch (err) {
-        console.error("Error geral na sicronização:", err);
-        return res.status(500).json({ sucesso: false, erro: err.message});
+        console.error("Erro geral na sincronização:", err);
+        return res.status(500).json({ sucesso: false, erro: err.message });
     }
-})
+});
 
 app.post(["/api/webhook/abacatepay", "/api/webhook"], async (req, res) => {
     try {
