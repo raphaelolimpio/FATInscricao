@@ -52,7 +52,7 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "Incrições!A:Q",
+            range: "Inscrições!A:Q",
         });
         const rows = response.data.values;
         if (!rows || rows.length <= 1){
