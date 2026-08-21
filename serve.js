@@ -37,6 +37,7 @@ app.get("/health", (req, res) => {
 const API_KEY = process.env.ABACATEPAY_API_KEY;
 const AUTORIZATION_API_KEY = process.env.AUTORIZATION_API_KEY;
 const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -121,10 +122,16 @@ app.get("/api/sicronixar-pagamento", async (req, res) => {
     }
 })
 
-app.post("/api/webhook", async (req, res) => {
+app.post(["/api/webhook/abacatepay", "/api/webhook"], async (req, res) => {
     try {
+        const { webhookSecret } = req.query;
+
+        if(webhookSecret != WEBHOOK_SECRET) {
+            console.warn("[Webhook] Tentativa de acesso não autorizada. Secret inválida");
+            return res.status(401).json({error: "unauthorized: Invalid webhook secret"})
+        }
         const body = req.body;
-        console.log("[webhook recebido]", JSON.stringify(body));
+        console.log("[Webhook AbacatePay Recebido]", JSON.stringify(body));
 
         const pixId = body.data?.id || body.data?.pixId || body.id || body.pixId;
         const status = body.data?.status || body.status;
