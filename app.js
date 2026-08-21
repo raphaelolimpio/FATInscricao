@@ -1,5 +1,6 @@
 let selectedMethod = 'pix';
 let statusInterval = null;
+let currentPixId = null;
 
 const formRegistro = document.getElementById('registration-form');
 const idadeInput = document.getElementById('idade');
@@ -26,6 +27,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('opt-card').addEventListener('click', () => selectPayment('card'));
     document.getElementById('opt-ticket').addEventListener('click', () => selectPayment('ticket'));
 });
+
+document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible" && currentPixId) {
+        verificarStatusImediato(currentPixId);
+    }
+});
+
+async function verificarStatusImediato(pixId) {
+    try {
+        const res = await fetch(`/api/check-status/${pixId}`);
+        const data = await res.json();
+        if (data.status === 'PAID' || data.status === 'COMPLETED') {
+            if (statusInterval) clearInterval(statusInterval);
+            exibirSucessoPagamento(pixId);
+        }
+    } catch (err) {
+        console.error('Erro na checagem imediata: ', err);
+    }
+}
 
 function applyCpfMask(input) {
     input.addEventListener('input', function (e) {
@@ -163,17 +183,20 @@ async function processPayment() {
 }
 
 function iniciarVerificacaoPagamento(pixId) {
+    currentPixId = pixId;
     if (statusInterval) clearInterval(statusInterval);
+
     statusInterval = setInterval(async () => {
         try {
             const res = await fetch(`/api/check-status/${pixId}`);
             const data = await res.json();
-            if (data.status === 'PAID') {
+            if (data.status === 'PAID' || data.status === 'COMPLETED') {
                 clearInterval(statusInterval);
                 exibirSucessoPagamento(pixId);
             }
         } catch (err) {
             console.error('Erro ao verificar status do pagamento:', err);
+            
         }
     }, 3000);
 }

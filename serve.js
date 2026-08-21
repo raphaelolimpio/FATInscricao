@@ -46,6 +46,109 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+app.get("/api/sicronixar-pagamento", async (req, res) => {
+    try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "Incrições!A:Q",
+        });
+        const rows = response.data.values;
+        if (!rows || rows.length <= 1){
+            return res.status(200).json({message: "Nenhuma linha encontrada na planilha"});
+        }
+        const atualizados = [];
+        const erros = [];
+        for (let i = 1; i < rows.length; i++){
+            const row = row[i];
+            const pixId = row[13]?.trim();
+            const statusAtual = row[14]?.trim();
+            const emailPiloto = row[3]?.trim();
+            const nomePiloto = row[1].trim();
+
+            if (pixId && statusAtual !== "Pago") {
+                try {
+                    console.log(`[Sicronização] Verificando Pix ${pixId} (${nomePiloto})...`);
+
+                    const checkResp = await axios.get("https://api.abacatepay.com/v1/pixQrCode/check",{
+                        params: { id: pixId },
+                        headers: {
+                            Authorization: `Bearer ${API_KEY}`,
+                            "Content-Type": "application/json"
+                        }
+                    });
+                    const statusGateway = checkResp.data.data?.status;
+                    if (statusGateway === "PAID" || statusGateway === "COMPLETED") {
+                        console.log(`[Sicronização] Pix ${pixId} foi PAGO! atualizando panilha... `);
+
+                        await atualizarStatusPlanilha(pixId, "Pago");
+                        const dadosPiloto = await getDadosPilotoByPixId(pixId);
+                        if (dadosPiloto && dadosPiloto.email) {
+                            try {
+                                const pdfPath = await gerarComprovante(dadosPiloto, { id: pixId });
+                                await enviarComprovanteEmail(dadosPiloto, pdfPath);
+                                console.log(`[Sicronizando] E-mail enviado com sucesso para ${dadosPiloto.email}`);
+
+                            } catch (mailErr) {
+                                console.error(`[Sicronização] Erro ao enviar e-mail para ${dadosPiloto.email}`);
+                            }
+                        }
+                        atualizados.push({
+                            nome: nomePiloto,
+                            email: emailPiloto,
+                            pixId: pixId,
+                            statusAnterior: statusAtual,
+                            novoStatus: "Pago"
+                        });
+                    } else {
+                        console.log(`[Sicronização] Pix ${pixId} ainda continua ${statusGateway}.`);
+                    }
+                } catch (checkErr) {
+                    console.error(`[Sicronização] Erro ao consultar Pix ${pixId}: `, checkErr.resolve?.data || checkErr.message);
+                    erros.push({ pixId, erro: checkErr.message });
+                }
+            }
+        }
+        return res.status(200).json({
+            sucesso: true,
+            totalAtualizados: atualizados.length,
+            pilotosAtualizados: atualizados,
+            erros: erros
+        });
+    } catch (err) {
+        console.error("Error geral na sicronização:", err);
+        return res.status(500).json({ sucesso: false, erro: err.message});
+    }
+})
+
+app.post("/api/webhook", async (req, res) => {
+    try {
+        const body = req.body;
+        console.log("[webhook recebido]", JSON.stringify(body));
+
+        const pixId = body.data?.id || body.data?.pixId || body.id || body.pixId;
+        const status = body.data?.status || body.status;
+        const event = body.event;
+
+        if (status === 'PAID' || status === 'COMPLETED' || event === 'billing.paid') {
+            console.log(`[Webhook] Pagamento confirmado para o Pix ID: ${pixId}`);
+
+            await atualizarStatusPlanilha(pixId, 'Pago');
+
+            const dadosPiloto = await getDadosPilotoByPixId(pixId);
+            if (dadosPiloto && dadosPiloto.email) {
+                const pdf = await gerarComprovante(dadosPiloto, { id: pixId });
+                await enviarComprovanteEmail(dadosPiloto, pdf);
+                console.log(`[Webhook] Comprovante enviado com sucesso para ${dadosPiloto.email}`);
+            }
+        }
+        return res.status(200).json({ received: true });
+    } catch (err) {
+        console.error('[webhook Erro]:', err);
+        return res.status(500).json({ error: 'Erro ao processar webhook' });
+    }
+});
+
 app.get("/api/download-comprovante/:pixId", async (req, res) => {
     try {
         const { pixId } = req.params;
@@ -63,7 +166,7 @@ app.get("/api/download-comprovante/:pixId", async (req, res) => {
 
         res.sendFile(caminhoPDF, (err) => {
             if (fs.existsSync(caminhoPDF)) {
-                fs.unlinkSync(caminhoPDF); 
+                fs.unlinkSync(caminhoPDF);
             }
             if (err) {
                 console.error("Erro ao enviar PDF para download:", err);
@@ -254,18 +357,17 @@ app.get("/api/check-status/:pixId", async (req, res) => {
             }
         );
         const status = response.data.data?.status;
-        const dadosPiloto = await getDadosPilotoByPixId(pixId);
-
-        if (!dadosPiloto) {
-            return res.status(404).json({
-                sucesso: false,
-                message: 'Piloto não encontrado'
-            });
-        }
+        console.log(`Status do Pix ${pixId}: `, status);
 
 
-        if (status === 'PAID') {
+        if (status === 'PAID' || status === 'COMPLETED') {
             await atualizarStatusPlanilha(pixId, 'Pago');
+            const dadosPiloto = await getDadosPilotoByPixId(pixId);
+            if (dadosPiloto && dadosPiloto.email) {
+                gerarComprovante(dadosPiloto, { id: pixId })
+                    .then(pdf => enviarComprovanteEmail(dadosPiloto, pdf))
+                    .catch(e => console.error("Erro ao enviar emial na checagem: ", e.message));
+            }
 
         }
         return res.status(200).json({
@@ -273,6 +375,7 @@ app.get("/api/check-status/:pixId", async (req, res) => {
             status: status
         });
     } catch (err) {
+        console.error('Erro ao verificar status de pagamento:', err.response?.data || err.message);
         return res.status(500).json({
             err: 'Erro ao verificar status do pagamento',
         });
@@ -420,7 +523,7 @@ function gerarComprovante(dadosPiloto, pixData) {
         doc.font('Helvetica').fontSize(11);
 
         const dataApenas = new Date().toLocaleDateString('pt-BR');
-        const valorFormatado = (dadosPiloto.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })   ;
+        const valorFormatado = (dadosPiloto.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 
         doc.text(`Nome do Piloto: ${dadosPiloto.name_do_piloto}`);
