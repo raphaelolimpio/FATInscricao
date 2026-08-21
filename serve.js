@@ -63,11 +63,8 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
         const atualizados = [];
         const erros = [];
 
-        // Começa em i = 1 para pular o cabeçalho
         for (let i = 1; i < rows.length; i++) {
             const linhaAtual = rows[i];
-            
-            // Coluna N (Índice 13) = ID Pix, Coluna O (Índice 14) = Status
             const pixId = linhaAtual[13] ? String(linhaAtual[13]).trim() : '';
             const statusAtual = linhaAtual[14] ? String(linhaAtual[14]).trim() : '';
             const emailPiloto = linhaAtual[3] ? String(linhaAtual[3]).trim() : '';
@@ -84,7 +81,8 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
                             headers: {
                                 Authorization: `Bearer ${AUTORIZATION_API_KEY || API_KEY}`,
                                 "Content-Type": "application/json"
-                            }
+                            },
+                            timeout: 5000 // Evita travamento de rede
                         }
                     );
 
@@ -93,18 +91,21 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
                     if (statusGateway === "PAID" || statusGateway === "COMPLETED") {
                         console.log(`[Sincronização] Pix ${pixId} PAGO! Atualizando planilha...`);
 
+                        // Atualiza a planilha no Google Sheets
                         await atualizarStatusPlanilha(pixId, "Pago");
 
-                        const dadosPiloto = await getDadosPilotoByPixId(pixId);
-                        if (dadosPiloto && dadosPiloto.email) {
-                            try {
-                                const pdfPath = await gerarComprovante(dadosPiloto, { id: pixId });
-                                await enviarComprovanteEmail(dadosPiloto, pdfPath);
-                                console.log(`[Sincronização] Comprovante enviado para ${dadosPiloto.email}`);
-                            } catch (mailErr) {
-                                console.error(`[Sincronização] Erro ao enviar e-mail:`, mailErr.message);
+                        // Dispara o e-mail em background sem travar a requisição
+                        getDadosPilotoByPixId(pixId).then(async (dadosPiloto) => {
+                            if (dadosPiloto && dadosPiloto.email) {
+                                try {
+                                    const pdfPath = await gerarComprovante(dadosPiloto, { id: pixId });
+                                    await enviarComprovanteEmail(dadosPiloto, pdfPath);
+                                    console.log(`[Sincronização] Comprovante enviado para ${dadosPiloto.email}`);
+                                } catch (mailErr) {
+                                    console.error(`[Sincronização] Erro ao enviar e-mail para ${dadosPiloto.email}:`, mailErr.message);
+                                }
                             }
-                        }
+                        }).catch(e => console.error("Erro ao buscar dados do piloto:", e.message));
 
                         atualizados.push({
                             nome: nomePiloto,
