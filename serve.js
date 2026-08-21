@@ -82,7 +82,7 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
                                 Authorization: `Bearer ${AUTORIZATION_API_KEY || API_KEY}`,
                                 "Content-Type": "application/json"
                             },
-                            timeout: 5000 // Evita travamento de rede
+                            timeout: 5000
                         }
                     );
 
@@ -91,10 +91,8 @@ app.get("/api/sincronizar-pagamentos", async (req, res) => {
                     if (statusGateway === "PAID" || statusGateway === "COMPLETED") {
                         console.log(`[Sincronização] Pix ${pixId} PAGO! Atualizando planilha...`);
 
-                        // Atualiza a planilha no Google Sheets
                         await atualizarStatusPlanilha(pixId, "Pago");
 
-                        // Dispara o e-mail em background sem travar a requisição
                         getDadosPilotoByPixId(pixId).then(async (dadosPiloto) => {
                             if (dadosPiloto && dadosPiloto.email) {
                                 try {
