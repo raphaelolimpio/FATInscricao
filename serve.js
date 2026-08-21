@@ -230,6 +230,82 @@ app.get("/regulamento", async (req, res) => {
     await baixarArquivo(regulamento.id, res);
 });
 
+app.get("/api/enviar-emails-pagos", async (req, res) => {
+    try {
+        const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "'Inscrições'!A:Q",
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length <= 1) {
+            return res.status(200).json({ message: "Nenhuma linha encontrada na planilha." });
+        }
+
+        const enviados = [];
+        const erros = [];
+
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const nomePiloto = row[1]?.trim();
+            const emailPiloto = row[3]?.trim();
+            const pixId = row[13]?.trim();
+            const statusAtual = row[14]?.trim();
+
+            if (statusAtual === "Pago" && emailPiloto && pixId) {
+                try {
+                    const dadosPiloto = {
+                        name_do_piloto: row[1] || '',
+                        cpf_do_piloto: row[2] || '',
+                        email: emailPiloto,
+                        telefone: row[4] || '',
+                        numero_da_cba: row[5] || '',
+                        idade: row[6] || '',
+                        nome_do_responsavel: row[7] || 'N/A',
+                        cpf_do_responsavel: row[8] || 'N/A',
+                        numero_do_piloto: row[9] || '',
+                        categoria: row[10] || '',
+                        tamanho_Camisa: row[11] || '',
+                        amount: Number(row[12] || 0) * 100,
+                        status: 'PAGO'
+                    };
+
+                    console.log(`[Disparo de E-mail] Gerando comprovante para ${nomePiloto} (${emailPiloto})...`);
+                    const pdfPath = await gerarComprovante(dadosPiloto, { id: pixId });
+
+                    await enviarComprovanteEmail(dadosPiloto, pdfPath);
+                    console.log(`[Disparo de E-mail] E-mail enviado com sucesso para ${emailPiloto}`);
+
+                    enviados.push({
+                        nome: nomePiloto,
+                        email: emailPiloto,
+                        pixId: pixId
+                    });
+                } catch (mailErr) {
+                    console.error(`[Disparo de E-mail] Erro ao enviar para ${emailPiloto}:`, mailErr.message);
+                    erros.push({
+                        nome: nomePiloto,
+                        email: emailPiloto,
+                        erro: mailErr.message
+                    });
+                }
+            }
+        }
+
+        return res.status(200).json({
+            sucesso: true,
+            totalEnviados: enviados.length,
+            totalErros: erros.length,
+            pilotosEnviados: enviados,
+            erros: erros
+        });
+
+    } catch (err) {
+        console.error("Erro geral no envio em massa de e-mails:", err);
+        return res.status(500).json({ sucesso: false, erro: err.message });
+    }
+});
 
 
 app.post("/api/checkout", async (req, res) => {
