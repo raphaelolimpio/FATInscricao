@@ -47,7 +47,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-app.get("/api/sicronixar-pagamento", async (req, res) => {
+app.get("/api/sicronizar-pagamento", async (req, res) => {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
         const response = await sheets.spreadsheets.values.get({
