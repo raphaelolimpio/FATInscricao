@@ -137,9 +137,9 @@ app.post(["/api/webhook/abacatepay", "/api/webhook"], async (req, res) => {
     try {
         const { webhookSecret } = req.query;
 
-        if(webhookSecret != WEBHOOK_SECRET) {
+        if (webhookSecret != WEBHOOK_SECRET) {
             console.warn("[Webhook] Tentativa de acesso não autorizada. Secret inválida");
-            return res.status(401).json({error: "unauthorized: Invalid webhook secret"})
+            return res.status(401).json({ error: "unauthorized: Invalid webhook secret" })
         }
         const body = req.body;
         console.log("[Webhook AbacatePay Recebido]", JSON.stringify(body));
@@ -153,12 +153,14 @@ app.post(["/api/webhook/abacatepay", "/api/webhook"], async (req, res) => {
 
             await atualizarStatusPlanilha(pixId, 'Pago');
 
+            /*
             const dadosPiloto = await getDadosPilotoByPixId(pixId);
             if (dadosPiloto && dadosPiloto.email) {
                 const pdf = await gerarComprovante(dadosPiloto, { id: pixId });
                 await enviarComprovanteEmail(dadosPiloto, pdf);
                 console.log(`[Webhook] Comprovante enviado com sucesso para ${dadosPiloto.email}`);
             }
+                */
         }
         return res.status(200).json({ received: true });
     } catch (err) {
@@ -229,7 +231,7 @@ app.get("/regulamento", async (req, res) => {
 
     await baixarArquivo(regulamento.id, res);
 });
-
+/*
 app.get("/api/enviar-emails-pagos", async (req, res) => {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
@@ -306,6 +308,7 @@ app.get("/api/enviar-emails-pagos", async (req, res) => {
         return res.status(500).json({ sucesso: false, erro: err.message });
     }
 });
+*/
 
 
 app.post("/api/checkout", async (req, res) => {
