@@ -38,7 +38,7 @@ const API_KEY = process.env.ABACATEPAY_API_KEY;
 const AUTORIZATION_API_KEY = process.env.AUTORIZATION_API_KEY;
 const NOME_ARQUIVO_EXCEL = 'inscricoes_pilotos.xlsx';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-
+/*
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -46,7 +46,7 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
-
+*/
 app.get("/api/sincronizar-pagamentos", async (req, res) => {
     try {
         const spreadsheetId = process.env.GOOGLE_DRIVE_FILE_ID;
@@ -148,7 +148,13 @@ app.post(["/api/webhook/abacatepay", "/api/webhook"], async (req, res) => {
         const status = body.data?.status || body.status;
         const event = body.event;
 
-        if (status === 'PAID' || status === 'COMPLETED' || event === 'billing.paid') {
+        const isPago = status === 'PAID' || 
+                       status === 'COMPLETED' || 
+                       event === 'billing.paid' || 
+                       event === 'transparent.completed' ||
+                       event === 'checkout.completed';
+
+        if (isPago && pixId) {
             console.log(`[Webhook] Pagamento confirmado para o Pix ID: ${pixId}`);
 
             await atualizarStatusPlanilha(pixId, 'Pago');
@@ -459,12 +465,7 @@ app.get("/api/check-status/:pixId", async (req, res) => {
 
         if (status === 'PAID' || status === 'COMPLETED') {
             await atualizarStatusPlanilha(pixId, 'Pago');
-            const dadosPiloto = await getDadosPilotoByPixId(pixId);
-            if (dadosPiloto && dadosPiloto.email) {
-                gerarComprovante(dadosPiloto, { id: pixId })
-                    .then(pdf => enviarComprovanteEmail(dadosPiloto, pdf))
-                    .catch(e => console.error("Erro ao enviar emial na checagem: ", e.message));
-            }
+            
 
         }
         return res.status(200).json({
@@ -691,7 +692,7 @@ async function getDadosPilotoByPixId(pixId) {
     }
 
 }
-
+/*
 async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
 
     await transporter.sendMail({
@@ -727,7 +728,7 @@ async function enviarComprovanteEmail(dadosPiloto, caminhoPdf) {
 
     console.log("Comprovante enviado para", dadosPiloto.email);
 }
-
+*/
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
